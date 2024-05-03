@@ -1,0 +1,121 @@
+Instance: 5_4_10.vrp
+Number of customers: 5
+Number of vehicles: 4
+Vehicle capacity: 10
+0 0.0 0.0
+3 0.0 10.0
+3 -10.0 10.0
+3 0.0 -10.0
+3 10.0 -10.0
+curr_solution: Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 0.0, -10.0) (3, 10.0, -10.0) (3, -10.0, 10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: 
+total_distance: 1000054.1421356237
+
+best_solution: Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 0.0, -10.0) (3, 10.0, -10.0) (3, -10.0, 10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: 
+total_distance: 1000054.1421356237
+
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 0.0, -10.0) (3, 10.0, -10.0) (3, -10.0, 10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: 
+total_distance: 1000054.1421356237
+
+Iteration: 1 Temperature: 100.0 Energy: 1000054.1421356237 Best Energy: 1000054.1421356237
+curr_solution: Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 10.0, -10.0) (3, -10.0, 10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) 
+total_distance: 56.50281539872885
+
+best_solution: Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 10.0, -10.0) (3, -10.0, 10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) 
+total_distance: 56.50281539872885
+
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 10.0, -10.0) (3, -10.0, 10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) 
+total_distance: 56.50281539872885
+
+Iteration: 2 Temperature: 99.0 Energy: 56.50281539872885 Best Energy: 56.50281539872885
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 10.0, -10.0) (3, -10.0, 10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) 
+total_distance: 56.50281539872885
+
+Iteration: 3 Temperature: 98.01 Energy: 56.50281539872885 Best Energy: 56.50281539872885
+curr_solution: Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 10.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+best_solution: Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 10.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 10.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+Iteration: 4 Temperature: 97.0299 Energy: 48.2842712474619 Best Energy: 48.2842712474619
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 10.0, -10.0) 
+Vehicle 1: (3, 0.0, 10.0) 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+Iteration: 5 Temperature: 96.0596 Energy: 48.2842712474619 Best Energy: 48.2842712474619
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 10.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: (3, 0.0, 10.0) 
+Vehicle 3: (3, 0.0, -10.0) (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+Iteration: 6 Temperature: 95.09901 Energy: 48.2842712474619 Best Energy: 48.2842712474619
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 10.0, -10.0) (3, 0.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: (3, 0.0, 10.0) 
+Vehicle 3: (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+Iteration: 7 Temperature: 94.14802 Energy: 48.2842712474619 Best Energy: 48.2842712474619
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 0.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: (3, 0.0, 10.0) (3, 10.0, -10.0) 
+Vehicle 3: (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+Iteration: 8 Temperature: 93.206535 Energy: 48.2842712474619 Best Energy: 48.2842712474619
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 0.0, -10.0) (3, 10.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: (3, 0.0, 10.0) 
+Vehicle 3: (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+Iteration: 9 Temperature: 92.27447 Energy: 48.2842712474619 Best Energy: 48.2842712474619
+Current Solution:Vehicle 0: (0, 0.0, 0.0) (3, 0.0, -10.0) (3, 10.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: (3, 0.0, 10.0) 
+Vehicle 3: (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+
+Iteration: 10 Temperature: 91.35172 Energy: 48.2842712474619 Best Energy: 48.2842712474619
+Vehicle 0: (0, 0.0, 0.0) (3, 0.0, 10.0) (3, 10.0, -10.0) 
+Vehicle 1: 
+Vehicle 2: 
+Vehicle 3: (3, 0.0, -10.0) (3, -10.0, 10.0) 
+total_distance: 48.2842712474619
+{"Instance": "5_4_10.vrp", "Time": 0.06, "Result": "--", "Solution": "--"}
