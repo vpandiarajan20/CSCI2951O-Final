@@ -22,16 +22,19 @@ public class Solver {
 
     public Solution solve() {
         Solution currSolution = new Solution(instance);
-        double currEnergy = currSolution.evalSolution(currSolution.schedule);
+        // Solution currSolution = Solution.initializeSolution(instance, 10);
+        Solution.computeDistanceMatrix(instance);
+        double currEnergy = Solution.evalSolution(currSolution.schedule);
         double bestEnergy = currEnergy;
-        Solution bestSolution = currSolution;
+        Solution bestSolution = currSolution.clone();
         int iter = 0;
         while (t > tMin && iter < maxIter) {
             currSolution.perturbSolution(t);
-            currEnergy = currSolution.evalSolution(currSolution.schedule);
+            currEnergy = Solution.evalSolution(currSolution.schedule);
             if (currEnergy < bestEnergy) {
                 bestEnergy = currEnergy;
-                bestSolution = new Solution(currSolution);
+                bestSolution = currSolution.clone();
+                System.out.println("New best solution: " + bestSolution);
             }
             iter++;
             System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
@@ -39,5 +42,7 @@ public class Solver {
         }
         return bestSolution;
     }
+
+    
 }
 

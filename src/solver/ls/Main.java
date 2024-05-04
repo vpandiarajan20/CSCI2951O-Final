@@ -18,7 +18,7 @@ public class Main {
 		watch.start();
 
 		VRPInstance instance = new VRPInstance(input);
-		Solver solver = new Solver(100.0f, 0.01f, 0.99f, 1000, instance);
+		Solver solver = new Solver(100.0f, 0.01f, 0.99f, 10, instance);
 		Solution solution = solver.solve();
 
 		watch.stop();
