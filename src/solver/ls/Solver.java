@@ -21,9 +21,10 @@ public class Solver {
     }
 
     public Solution solve() {
+        Solution.initializeFields(instance);
         Solution currSolution = new Solution(instance);
         // Solution currSolution = Solution.initializeSolution(instance, 10);
-        Solution.computeDistanceMatrix(instance);
+        // currSolution.sweepGenerateSolution();
         double currEnergy = Solution.evalSolution(currSolution.schedule);
         double bestEnergy = currEnergy;
         Solution bestSolution = currSolution.clone();

@@ -19,7 +19,9 @@ public class Solution {
   // 2D array, each row is a vehicle route, each column is a customer
   ArrayList<Customer>[] schedule;
   static double[][] distanceMatrix;
-  static int vehicleDemand;
+  static int vehicleCapacity;
+  static ArrayList<Tuple<Double, Integer>> angleList;
+  static ArrayList<Customer> customers;
 
   public Solution() {
   }
@@ -30,20 +32,9 @@ public class Solution {
     for (int i = 0; i < instance.numVehicles; i++) {
       schedule[i] = new ArrayList<Customer>();
     }
-    int vehicleNum = 0;
-    int demand = 0;
-    for (int i = 0; i < instance.numCustomers; i++) {
-      demand += instance.demandOfCustomer[i];
-      if (demand > instance.vehicleCapacity) {
-        vehicleNum++;
-        if (vehicleNum >= instance.numVehicles) {
-          // raise new IllegalArgumentException("Vehicle capacity exceeded");
-        }
-        demand = instance.demandOfCustomer[i];
-      }
-      schedule[vehicleNum].add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i]));
-    }
-    Solution.vehicleDemand = instance.vehicleCapacity;
+
+    // sweepGenerateInitialSolution();
+    naiveGenerateInitialSolution();
   }
   
   @SuppressWarnings("unchecked")
@@ -54,19 +45,31 @@ public class Solution {
     int bestPosition = -1;
     double bestDistance = Double.MAX_VALUE;
     int routeSize = schedule[vehicle].size();
+    if (routeSize == 0) {
+      return 0;
+    }
     // int demand =
     for (int i = 0; i < routeSize; i++) {
-      // System.out.println("OptimalAddition i: " + i);
       ArrayList<Customer> scheduleNew = (ArrayList<Customer>) schedule[vehicle].clone();
       scheduleNew.add(i, c);
       double distance = computeRouteDistance(scheduleNew);
-      if (distance < bestDistance) {
+      double demand = computeRouteDemand(scheduleNew);
+      if (distance < bestDistance && demand <= Solution.vehicleCapacity) {
         bestDistance = distance;
         bestPosition = i;
       }
     }
-    System.out.println("OptimalAddition bestPosition: " + bestPosition);
     return bestPosition;
+  }
+
+  public static void initializeFields(VRPInstance instance) {
+    Solution.vehicleCapacity = instance.vehicleCapacity;
+    customers = new ArrayList<Customer>();
+    for (int i = 0; i < instance.numCustomers; i++) {
+      customers.add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i]));
+    }
+    computeDistanceMatrix(instance);
+    computeAngleList(instance);
   }
 
   public static void computeDistanceMatrix(VRPInstance instance){
@@ -83,6 +86,65 @@ public class Solution {
         }
         Solution.distanceMatrix = distanceMatrix;
     }
+  
+  public static void computeAngleList(VRPInstance instance) {
+    ArrayList<Tuple<Double, Integer>> angleList = new ArrayList<Tuple<Double, Integer>>();
+    for (int i = 0; i < instance.numCustomers; i++) {
+      double angle = Math.atan2(customers.get(i).getY(), customers.get(i).getX());
+      angleList.add(new Tuple<Double, Integer>(angle, i));
+    }
+    angleList.sort((a, b) -> a.getFirst().compareTo(b.getFirst()));
+    Solution.angleList = angleList;
+  }
+
+  public void naiveGenerateInitialSolution() {
+    int vehicleNum = 0;
+    int demand = 0;
+    for (int i = 0; i < customers.size(); i++) {
+      demand += customers.get(i).getDemand();
+      if (demand > Solution.vehicleCapacity) {
+        vehicleNum++;
+        if (vehicleNum >= schedule.length) {
+          // no more vehicles
+          throw new RuntimeException("No more vehicles");
+        }
+        demand = customers.get(i).getDemand();
+      }
+      schedule[vehicleNum].add(customers.get(i));
+    }
+  }
+
+  public void sweepGenerateInitialSolution() {
+    // generate a solution using the sweep algorithm
+    // start from the depot and add customers in order of angle
+    // if the demand exceeds the vehicle capacity, start a new route
+    // return the solution
+    int vehicleNum = 0;
+    System.out.println("Vehicle capacity: " + Solution.vehicleCapacity);
+    for (int i = 0; i < Solution.angleList.size(); i++) {
+      Customer c = Solution.customers.get(Solution.angleList.get(i).getSecond());
+      if (vehicleNum > 0) {
+        for (int j = 0; j < vehicleNum; j++) {
+          // try to add to existing routes (except the last one
+          int addPositionPrev = OptimalAddition(j, c);
+          if (addPositionPrev != -1) {
+            this.schedule[j].add(addPositionPrev, c);
+            continue;
+          }
+        }
+      }
+      int addPosition = OptimalAddition(vehicleNum, c);
+      if (addPosition == -1) {
+        System.out.println("Demand: " + computeRouteDemand(this.schedule[vehicleNum]) + " Distance: " + computeRouteDistance(this.schedule[vehicleNum]) + " Vehicle: " + vehicleNum + " Route: " + this.schedule[vehicleNum]);
+        System.out.println("New customer demand: " + c.getDemand());
+        vehicleNum++;
+        this.schedule[vehicleNum] = new ArrayList<Customer>();
+        this.schedule[vehicleNum].add(c);
+      } else {
+        this.schedule[vehicleNum].add(addPosition, c);
+      }
+    }
+  }
 
   public static double evalSolution(ArrayList<Customer>[] solution) {
     // System.out.println("evalSolution called");
@@ -91,7 +153,7 @@ public class Solution {
       totalDistance += computeRouteDistance(solution[i]);
       double demand = computeRouteDemand(solution[i]);
       
-      if (demand > Solution.vehicleDemand) {
+      if (demand > Solution.vehicleCapacity) {
         // penalize the solution
         totalDistance += 1000000.0;
       }
@@ -146,6 +208,13 @@ public class Solution {
     int customer1 = rand.nextInt(schedule[vehicle1].size());
     ArrayList<Customer>[] scheduleNew = schedule;
     int addPosition = OptimalAddition(vehicle2, schedule[vehicle1].get(customer1));
+    // while (addPosition == -1) {
+    //   vehicle2 = rand.nextInt(schedule.length);
+    //   addPosition = OptimalAddition(vehicle2, schedule[vehicle1].get(customer1));
+    // }
+    if (addPosition == -1) {
+      addPosition = rand.nextInt(schedule[vehicle2].size());
+    }
     scheduleNew[vehicle2].add(addPosition, schedule[vehicle1].get(customer1));
     scheduleNew[vehicle1].remove(customer1);
     return scheduleNew;
