@@ -25,6 +25,7 @@ public class Solver {
         Solution currSolution = new Solution(instance);
         // Solution currSolution = Solution.initializeSolution(instance, 10);
         // currSolution.sweepGenerateSolution();
+        System.out.println("Initial solution: " + currSolution);
         double currEnergy = Solution.evalSolution(currSolution.schedule);
         double bestEnergy = currEnergy;
         Solution bestSolution = currSolution.clone();
@@ -32,15 +33,19 @@ public class Solver {
         while (t > tMin && iter < maxIter) {
             currSolution.perturbSolution(t);
             currEnergy = Solution.evalSolution(currSolution.schedule);
+            // System.out.println("Schedule:" + currSolution);
             if (currEnergy < bestEnergy) {
                 bestEnergy = currEnergy;
                 bestSolution = currSolution.clone();
-                System.out.println("New best solution: " + bestSolution);
+                // System.out.println("New best solution: " + bestSolution);
             }
             iter++;
             System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
             t = t * alpha;
         }
+        // for (int i = 0; i < bestSolution.schedule.length; i++) {
+        //     System.out.println("Route " + i + ", Distance: " + Solution.computeRouteDistance(bestSolution.schedule[i]));
+        // }
         return bestSolution;
     }
 
