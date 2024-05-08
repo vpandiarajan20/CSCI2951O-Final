@@ -1,6 +1,7 @@
 package solver.ls;
 
 import solver.ls.insertionHeuristics.InsertionHeuristic;
+import solver.ls.removalHeuristics.RemoveHeuristic;
 
 public class Solver {
     // function to evaluate solution
@@ -15,8 +16,10 @@ public class Solver {
     int restartIter;
     VRPInstance instance;
     InsertionHeuristic heuristic;
+    RemoveHeuristic removalHeuristic;
 
-    public Solver(float t, float tMin, float alpha, int maxIter, int restartIter, VRPInstance instance, InsertionHeuristic heuristic) {
+    public Solver(float t, float tMin, float alpha, int maxIter, int restartIter, 
+    VRPInstance instance, InsertionHeuristic heuristic, RemoveHeuristic removalHeuristic) {
         this.t = t;
         this.tMin = tMin;
         this.alpha = alpha;
@@ -24,11 +27,12 @@ public class Solver {
         this.restartIter = restartIter;
         this.instance = instance;
         this.heuristic = heuristic;
+        this.removalHeuristic = removalHeuristic;
     }
 
     public Solution solve() {
         Solution.initializeFields(instance);
-        Solution currSolution = new Solution(instance, heuristic);
+        Solution currSolution = new Solution(instance, heuristic, removalHeuristic);
         // Solution currSolution = Solution.initializeSolution(instance, 10);
         // currSolution.sweepGenerateSolution();
         System.out.println("Initial solution: " + currSolution);

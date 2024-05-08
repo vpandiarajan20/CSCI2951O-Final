@@ -4,11 +4,13 @@ public class Customer {
   private double x;
   private double y;
   private int demand;
+  private int id;
 
-  public Customer(double x, double y, int demand) {
+  public Customer(double x, double y, int demand, int id) {
     this.x = x;
     this.y = y;
     this.demand = demand;
+    this.id = id;
   }
 
   public double getX() {
@@ -21,6 +23,10 @@ public class Customer {
 
   public int getDemand() {
     return demand;
+  }
+
+  public int getId() {
+    return id;
   }
 
   public double distanceTo(Customer p) {
@@ -36,7 +42,7 @@ public class Customer {
   }
 
   public Customer clone() {
-    return new Customer(x,y,demand);
+    return new Customer(x,y,demand,id);
   }
 
 }

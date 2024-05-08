@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import solver.ls.insertionHeuristics.InsertionHeuristic;
+import solver.ls.removalHeuristics.RemoveHeuristic;
 
 public class Solution {
   // function to evaluate solution
@@ -24,18 +25,20 @@ public class Solution {
   static double penalty = 1000000;
 
   InsertionHeuristic heuristic;
+  RemoveHeuristic removalHeuristic;
   ArrayList<Customer>[] schedule;
 
   public Solution() {
   }
   
   @SuppressWarnings("unchecked")
-  public Solution(VRPInstance instance, InsertionHeuristic heuristic) {
+  public Solution(VRPInstance instance, InsertionHeuristic heuristic, RemoveHeuristic removalHeuristic) {
     schedule = new ArrayList[instance.numVehicles];
     for (int i = 0; i < instance.numVehicles; i++) {
       schedule[i] = new ArrayList<Customer>();
     }
     this.heuristic = heuristic;
+    this.removalHeuristic = removalHeuristic;
     // sweepGenerateInitialSolution();
     naiveGenerateInitialSolution();
     penalty = evalSolution(schedule) * 0.6;
@@ -45,7 +48,7 @@ public class Solution {
     Solution.vehicleCapacity = instance.vehicleCapacity;
     Solution.customers = new ArrayList<Customer>();
     for (int i = 0; i < instance.numCustomers; i++) {
-      Solution.customers.add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i]));
+      Solution.customers.add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i], i));
     }
     // sort customers by demand, descending
     Solution.customers.sort((a, b) -> b.getDemand() - a.getDemand());
@@ -171,16 +174,18 @@ public class Solution {
     if (vehicle1 == vehicle2) {
       vehicle2 = (vehicle2 + 1) % schedule.length;
     }
-    int customer1 = rand.nextInt(schedule[vehicle1].size());
+    // System.out.println("Old Schedule: " + printSchedule(schedule));
     ArrayList<Customer>[] scheduleNew = copySchedule(schedule);
-    this.heuristic.applyHeuristic(schedule[vehicle1].get(customer1), scheduleNew[vehicle2]);
+    Customer customerRemove = removalHeuristic.removeHeuristic(scheduleNew[vehicle1]);
+    this.heuristic.applyHeuristic(customerRemove, scheduleNew[vehicle2]);
     // int addPosition = OptimalAddition(vehicle2, schedule[vehicle1].get(customer1));
-    // System.out.println("Vehicle1: " + vehicle1 + " Vehicle2: " + vehicle2 + " Customer1(M): " + schedule[vehicle1].get(customer1) + " AddPosition: " + addPosition);
+    // System.out.println("Vehicle1: " + vehicle1 + " Vehicle2: " + vehicle2 + " Customer1(M): " + customerRemove);
+    // System.out.println("New Schedule: " + printSchedule(scheduleNew));
     // // if (addPosition == -1) {
     // //   addPosition = rand.nextInt(schedule[vehicle2].size());
     // // }
     // scheduleNew[vehicle2].add(addPosition, schedule[vehicle1].get(customer1));
-    scheduleNew[vehicle1].remove(customer1);
+    // scheduleNew[vehicle1].remove(customer1);
 
     return scheduleNew;
   }
@@ -204,6 +209,7 @@ public class Solution {
         clonedSolution.schedule[i] = new ArrayList<Customer>(this.schedule[i]);
     }
     clonedSolution.heuristic = this.heuristic;
+    clonedSolution.removalHeuristic = this.removalHeuristic;
     
     return clonedSolution;
   }
@@ -234,6 +240,21 @@ public class Solution {
       sb.append("\n");
     }
     sb.append("total_distance: " + Solution.evalSolution(newSchedule) + "\n");
+    return sb.toString();
+  }
+
+  public String submissionFormat() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(Math.round(evalSolution(schedule)) + " 0 ");
+    for (int i = 0; i < schedule.length; i++) {
+      sb.append("0 ");
+      for (int j = 0; j < schedule[i].size(); j++) {
+        sb.append(schedule[i].get(j).getId() + " ");
+      }
+      sb.append("0 ");
+    }
+    // remove last space
+    sb.deleteCharAt(sb.length() - 1);
     return sb.toString();
   }
 }

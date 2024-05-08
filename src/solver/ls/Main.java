@@ -1,8 +1,11 @@
 package solver.ls;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Random;
 
 import solver.ls.insertionHeuristics.TwoOpt;
+import solver.ls.removalHeuristics.RandomRemoval;
+import solver.ls.removalHeuristics.TopkRemoval;
 
 public class Main {
 	public static void main(String[] args) {
@@ -21,7 +24,7 @@ public class Main {
 		watch.start();
 
 		VRPInstance instance = new VRPInstance(input);
-		Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 50000, 1500, instance, new TwoOpt());
+		Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 1000000, 1500, instance, new TwoOpt(), new TopkRemoval());
 		Solution solution = solver.solve();
 
 		watch.stop();
@@ -31,6 +34,6 @@ public class Main {
 		System.out.println("{\"Instance\": \"" + filename +
 				"\", \"Time\": " + String.format("%.2f", watch.getTime()) +
 				", \"Result\": \"--\"" +
-				", \"Solution\": \"--\"}");
+				", \"Solution\": \"" + solution.submissionFormat() + "\"}");
 	}
 }

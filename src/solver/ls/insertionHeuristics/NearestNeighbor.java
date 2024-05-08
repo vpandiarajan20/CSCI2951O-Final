@@ -12,10 +12,11 @@ public class NearestNeighbor extends InsertionHeuristic{
         route.add(addPosition, newCustomer);
     }
 
+    @SuppressWarnings("unchecked")
     public void applyHeuristicRoute(ArrayList<Customer> route) {
         ArrayList<Customer> customers = (ArrayList<Customer>) route.clone();
         route = new ArrayList<>();
-        Customer depot = new Customer(0, 0, 0);
+        Customer depot = new Customer(0, 0, 0, -1);
         Customer lastCustomer = depot;
         while (customers.size() > 0) {
             int nearestNeighbor = findNearestNeighbor(lastCustomer, customers);
@@ -24,6 +25,7 @@ public class NearestNeighbor extends InsertionHeuristic{
         }
     }
 
+  @SuppressWarnings("unchecked")
   public int OptimalAddition(ArrayList<Customer> route, Customer c) {
     // find the best position to add customer c to vehicle
     // return the position
