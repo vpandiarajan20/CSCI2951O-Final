@@ -1,6 +1,6 @@
 package solver.ls;
 
-import solver.ls.heuristics.Heuristic;
+import solver.ls.insertionHeuristics.InsertionHeuristic;
 
 public class Solver {
     // function to evaluate solution
@@ -14,9 +14,9 @@ public class Solver {
     int maxIter;
     int restartIter;
     VRPInstance instance;
-    Heuristic heuristic;
+    InsertionHeuristic heuristic;
 
-    public Solver(float t, float tMin, float alpha, int maxIter, int restartIter, VRPInstance instance, Heuristic heuristic) {
+    public Solver(float t, float tMin, float alpha, int maxIter, int restartIter, VRPInstance instance, InsertionHeuristic heuristic) {
         this.t = t;
         this.tMin = tMin;
         this.alpha = alpha;

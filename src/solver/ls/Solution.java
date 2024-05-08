@@ -2,7 +2,7 @@ package solver.ls;
 import java.util.ArrayList;
 import java.util.Random;
 
-import solver.ls.heuristics.Heuristic;
+import solver.ls.insertionHeuristics.InsertionHeuristic;
 
 public class Solution {
   // function to evaluate solution
@@ -17,20 +17,20 @@ public class Solution {
   }
   
   // 2D array, each row is a vehicle route, each column is a customer
+  public static int vehicleCapacity;
   static double[][] distanceMatrix;
-  static int vehicleCapacity;
   static ArrayList<Tuple<Double, Integer>> angleList;
   static ArrayList<Customer> customers;
   static double penalty = 1000000;
 
-  Heuristic heuristic;
+  InsertionHeuristic heuristic;
   ArrayList<Customer>[] schedule;
 
   public Solution() {
   }
   
   @SuppressWarnings("unchecked")
-  public Solution(VRPInstance instance, Heuristic heuristic) {
+  public Solution(VRPInstance instance, InsertionHeuristic heuristic) {
     schedule = new ArrayList[instance.numVehicles];
     for (int i = 0; i < instance.numVehicles; i++) {
       schedule[i] = new ArrayList<Customer>();
@@ -53,30 +53,7 @@ public class Solution {
     computeAngleList(instance);
   }
   
-  @SuppressWarnings("unchecked")
-  public int OptimalAddition(int vehicle, Customer c) {
-    // find the best position to add customer c to vehicle
-    // return the position
-    // System.out.println("OptimalAddition called");
-    int bestPosition = -1;
-    double bestDistance = Double.MAX_VALUE;
-    int routeSize = schedule[vehicle].size();
-    if (routeSize == 0) {
-      return 0;
-    }
-    // int demand =
-    for (int i = 0; i < routeSize; i++) {
-      ArrayList<Customer> scheduleNew = (ArrayList<Customer>) schedule[vehicle].clone();
-      scheduleNew.add(i, c);
-      double distance = computeRouteDistance(scheduleNew);
-      double demand = computeRouteDemand(scheduleNew);
-      if (distance < bestDistance && demand <= Solution.vehicleCapacity) {
-        bestDistance = distance;
-        bestPosition = i;
-      }
-    }
-    return bestPosition;
-  }
+
   
   public static void computeDistanceMatrix(VRPInstance instance){
         double[][] distanceMatrix = new double[instance.numCustomers][instance.numCustomers];
@@ -128,39 +105,6 @@ public class Solution {
       heuristic.applyHeuristicRoute(schedule[i]);
     }
     System.out.println("TWO-OPT solution: " + evalSolution(schedule));
-  }
-
-  public void sweepGenerateInitialSolution() {
-    // generate a solution using the sweep algorithm
-    // start from the depot and add customers in order of angle
-    // if the demand exceeds the vehicle capacity, start a new route
-    // return the solution
-    int vehicleNum = 0;
-    System.out.println("Vehicle capacity: " + Solution.vehicleCapacity);
-    int skip = 4;
-    for (int i = 0; i < Solution.angleList.size(); i++) {
-      Customer c = Solution.customers.get(Solution.angleList.get(i).getSecond());
-      System.out.println("Customer: " + c);
-      if (vehicleNum > 0 && skip < 2) {
-        int addPositionPrev = OptimalAddition(vehicleNum-1, c);
-        if (addPositionPrev != -1) {
-          this.schedule[vehicleNum-1].add(addPositionPrev, c);
-          continue;
-        }
-      }
-      int addPosition = OptimalAddition(vehicleNum, c);
-      if (addPosition == -1) {
-        System.out.println("Demand: " + computeRouteDemand(this.schedule[vehicleNum]) + " Distance: " + computeRouteDistance(this.schedule[vehicleNum]) + " Vehicle: " + vehicleNum + " Route: " + this.schedule[vehicleNum]);
-        System.out.println("New customer demand: " + c.getDemand());
-        vehicleNum++;
-        this.schedule[vehicleNum] = new ArrayList<Customer>();
-        this.schedule[vehicleNum].add(c);
-        skip = -1;
-      } else {
-        this.schedule[vehicleNum].add(addPosition, c);
-      }
-      skip++;
-    }
   }
 
   public static double evalSolution(ArrayList<Customer>[] solution) {

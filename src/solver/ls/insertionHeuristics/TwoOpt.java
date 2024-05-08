@@ -1,10 +1,10 @@
-package solver.ls.heuristics;
+package solver.ls.insertionHeuristics;
 import java.util.ArrayList;
 
 import solver.ls.Customer;
 import solver.ls.Solution;
 
-public class TwoOpt extends Heuristic {
+public class TwoOpt extends InsertionHeuristic {
 
     private static void twoOptSwap(ArrayList<Customer> route, int i, int k) {
         while (i < k) {

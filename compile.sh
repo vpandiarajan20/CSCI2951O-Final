@@ -5,4 +5,4 @@
 ########################################
 
 # Update this file with instructions on how to compile your code
-javac ./src/solver/ls/*.java ./src/solver/ls/heuristics/*.java
+javac ./src/solver/ls/*.java ./src/solver/ls/insertionHeuristics/*.java ./src/solver/ls/removalHeuristics/*.java

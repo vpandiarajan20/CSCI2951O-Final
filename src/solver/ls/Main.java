@@ -2,7 +2,7 @@ package solver.ls;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import solver.ls.heuristics.TwoOpt;
+import solver.ls.insertionHeuristics.TwoOpt;
 
 public class Main {
 	public static void main(String[] args) {
