@@ -35,4 +35,8 @@ public class Customer {
     return "(" + x + ", " + y + ", " + demand + ")";
   }
 
+  public Customer clone() {
+    return new Customer(x,y,demand);
+  }
+
 }

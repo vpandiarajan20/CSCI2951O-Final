@@ -2,6 +2,8 @@ package solver.ls;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import solver.ls.heuristics.TwoOpt;
+
 public class Main {
 	public static void main(String[] args) {
 		if (args.length == 0) {
@@ -13,12 +15,13 @@ public class Main {
 		Path path = Paths.get(input);
 		String filename = path.getFileName().toString();
 		System.out.println("Instance: " + input);
+		
 
 		Timer watch = new Timer();
 		watch.start();
 
 		VRPInstance instance = new VRPInstance(input);
-		Solver solver = new Solver(100.0f, 0.01f, 0.999f, 10000, instance);
+		Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 50000, 1500, instance, new TwoOpt());
 		Solution solution = solver.solve();
 
 		watch.stop();

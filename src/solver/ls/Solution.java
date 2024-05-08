@@ -1,8 +1,8 @@
 package solver.ls;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
+
+import solver.ls.heuristics.Heuristic;
 
 public class Solution {
   // function to evaluate solution
@@ -17,25 +17,28 @@ public class Solution {
   }
   
   // 2D array, each row is a vehicle route, each column is a customer
-  ArrayList<Customer>[] schedule;
   static double[][] distanceMatrix;
   static int vehicleCapacity;
   static ArrayList<Tuple<Double, Integer>> angleList;
   static ArrayList<Customer> customers;
+  static double penalty = 1000000;
+
+  Heuristic heuristic;
+  ArrayList<Customer>[] schedule;
 
   public Solution() {
   }
   
   @SuppressWarnings("unchecked")
-  public Solution(VRPInstance instance) {
+  public Solution(VRPInstance instance, Heuristic heuristic) {
     schedule = new ArrayList[instance.numVehicles];
     for (int i = 0; i < instance.numVehicles; i++) {
       schedule[i] = new ArrayList<Customer>();
     }
-
+    this.heuristic = heuristic;
     // sweepGenerateInitialSolution();
     naiveGenerateInitialSolution();
-    
+    penalty = evalSolution(schedule) * 0.6;
   }
 
   public static void initializeFields(VRPInstance instance) {
@@ -119,8 +122,13 @@ public class Solution {
       demandLeft[vehicleNum] += demand;
       schedule[vehicleNum].add(customers.get(i));
     }
-  }
 
+    System.out.println("Naive solution: " + evalSolution(schedule));
+    for (int i = 0; i < schedule.length; i ++) {
+      heuristic.applyHeuristicRoute(schedule[i]);
+    }
+    System.out.println("TWO-OPT solution: " + evalSolution(schedule));
+  }
 
   public void sweepGenerateInitialSolution() {
     // generate a solution using the sweep algorithm
@@ -163,7 +171,7 @@ public class Solution {
       
       if (demand > Solution.vehicleCapacity) {
         // penalize the solution
-        totalDistance += 10000.0;
+        totalDistance += penalty;
       }
     }
     return totalDistance;
@@ -221,19 +229,20 @@ public class Solution {
     }
     int customer1 = rand.nextInt(schedule[vehicle1].size());
     ArrayList<Customer>[] scheduleNew = copySchedule(schedule);
-    int addPosition = OptimalAddition(vehicle2, schedule[vehicle1].get(customer1));
+    this.heuristic.applyHeuristic(schedule[vehicle1].get(customer1), scheduleNew[vehicle2]);
+    // int addPosition = OptimalAddition(vehicle2, schedule[vehicle1].get(customer1));
     // System.out.println("Vehicle1: " + vehicle1 + " Vehicle2: " + vehicle2 + " Customer1(M): " + schedule[vehicle1].get(customer1) + " AddPosition: " + addPosition);
-    if (addPosition == -1) {
-      addPosition = rand.nextInt(schedule[vehicle2].size());
-    }
-    scheduleNew[vehicle2].add(addPosition, schedule[vehicle1].get(customer1));
+    // // if (addPosition == -1) {
+    // //   addPosition = rand.nextInt(schedule[vehicle2].size());
+    // // }
+    // scheduleNew[vehicle2].add(addPosition, schedule[vehicle1].get(customer1));
     scheduleNew[vehicle1].remove(customer1);
 
     return scheduleNew;
   }
 
   @SuppressWarnings("unchecked")
-  public ArrayList<Customer>[] copySchedule(ArrayList<Customer>[] schedule) {
+  public static ArrayList<Customer>[] copySchedule(ArrayList<Customer>[] schedule) {
     ArrayList<Customer>[] scheduleNew = new ArrayList[schedule.length];
     for (int i = 0; i < schedule.length; i++) {
       scheduleNew[i] = (ArrayList<Customer>)schedule[i].clone();
@@ -250,6 +259,7 @@ public class Solution {
     for (int i = 0; i < this.schedule.length; i++) {
         clonedSolution.schedule[i] = new ArrayList<Customer>(this.schedule[i]);
     }
+    clonedSolution.heuristic = this.heuristic;
     
     return clonedSolution;
   }

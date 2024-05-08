@@ -1,5 +1,7 @@
 package solver.ls;
 
+import solver.ls.heuristics.Heuristic;
+
 public class Solver {
     // function to evaluate solution
     // function to calculate acceptance probability
@@ -10,19 +12,23 @@ public class Solver {
     float tMin;
     float alpha;
     int maxIter;
+    int restartIter;
     VRPInstance instance;
+    Heuristic heuristic;
 
-    public Solver(float t, float tMin, float alpha, int maxIter, VRPInstance instance) {
+    public Solver(float t, float tMin, float alpha, int maxIter, int restartIter, VRPInstance instance, Heuristic heuristic) {
         this.t = t;
         this.tMin = tMin;
         this.alpha = alpha;
         this.maxIter = maxIter;
+        this.restartIter = restartIter;
         this.instance = instance;
+        this.heuristic = heuristic;
     }
 
     public Solution solve() {
         Solution.initializeFields(instance);
-        Solution currSolution = new Solution(instance);
+        Solution currSolution = new Solution(instance, heuristic);
         // Solution currSolution = Solution.initializeSolution(instance, 10);
         // currSolution.sweepGenerateSolution();
         System.out.println("Initial solution: " + currSolution);
@@ -30,6 +36,7 @@ public class Solver {
         double bestEnergy = currEnergy;
         Solution bestSolution = currSolution.clone();
         int iter = 0;
+        int noImprovIter = 0;
         while (t > tMin && iter < maxIter) {
             currSolution.perturbSolution(t);
             currEnergy = Solution.evalSolution(currSolution.schedule);
@@ -37,7 +44,15 @@ public class Solver {
             if (currEnergy < bestEnergy) {
                 bestEnergy = currEnergy;
                 bestSolution = currSolution.clone();
+                noImprovIter = 0;
                 // System.out.println("New best solution: " + bestSolution);
+            } else {
+                noImprovIter++;
+                if (noImprovIter > restartIter) {
+                    currSolution = bestSolution.clone();
+                    noImprovIter = 0;
+                    System.out.println("Restarting");
+                }
             }
             iter++;
             System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
