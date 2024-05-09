@@ -33,7 +33,7 @@ public class Main {
 
 		VRPInstance instance = new VRPInstance(input);
 		// Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 50000, 1500, instance, new TwoOpt(), new TopkRemoval());
-		Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 350000, 1500, instance, new InsertionHeuristic[]{new TwoOpt(), new ThreeOpt(), new NearestNeighbor()}, new TopkRemoval());
+		Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 500000, 1500, instance, new InsertionHeuristic[]{new TwoOpt(), new ThreeOpt(), new NearestNeighbor()}, new RandomRemoval());
 		Solution solution = solver.solve();
 
 		watch.stop();

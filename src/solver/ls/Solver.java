@@ -37,12 +37,19 @@ public class Solver {
         // currSolution.sweepGenerateSolution();
         System.out.println("Initial solution: " + currSolution);
         double currEnergy = Solution.evalSolution(currSolution.schedule);
-        t = (float) currEnergy;
+        // TODO: explore using different values for the temperature, such as the initial energy
+        // t = (float) currEnergy;
         double bestEnergy = currEnergy;
         Solution bestSolution = currSolution.clone();
         int iter = 0;
         int noImprovIter = 0;
         while (t > tMin && iter < maxIter) {
+            if (iter % 100 == 0) {
+                // TODO: 100 needs to be a hyperparam
+                Solution.incrementPenalty();
+                bestEnergy = Solution.evalSolution(bestSolution.schedule);
+            }
+            // TODO: explore using a group of solutions to perturb
             currSolution.perturbSolution(t);
             currEnergy = Solution.evalSolution(currSolution.schedule);
             // System.out.println("Schedule:" + currSolution);
@@ -54,9 +61,9 @@ public class Solver {
             } else {
                 noImprovIter++;
                 if (noImprovIter > restartIter) {
-                    currSolution = bestSolution.clone();
+                    // currSolution = bestSolution.clone();
                     noImprovIter = 0;
-                    System.out.println("Restarting");
+                    // System.out.println("Restarting");
                 }
             }
             iter++;
