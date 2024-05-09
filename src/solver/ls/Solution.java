@@ -22,9 +22,9 @@ public class Solution {
   static double[][] distanceMatrix;
   static ArrayList<Tuple<Double, Integer>> angleList;
   static ArrayList<Customer> customers;
-  static double penalty = 1000000;
+  static double penalty = 0.0;
 
-  InsertionHeuristic heuristic;
+  InsertionHeuristic[] insertionHeuristics;
   RemoveHeuristic removalHeuristic;
   ArrayList<Customer>[] schedule;
 
@@ -32,16 +32,18 @@ public class Solution {
   }
   
   @SuppressWarnings("unchecked")
-  public Solution(VRPInstance instance, InsertionHeuristic heuristic, RemoveHeuristic removalHeuristic) {
+  public Solution(VRPInstance instance, InsertionHeuristic[] insertionHeuristics, RemoveHeuristic removalHeuristic) {
     schedule = new ArrayList[instance.numVehicles];
     for (int i = 0; i < instance.numVehicles; i++) {
       schedule[i] = new ArrayList<Customer>();
     }
-    this.heuristic = heuristic;
+    this.insertionHeuristics = insertionHeuristics;
     this.removalHeuristic = removalHeuristic;
     // sweepGenerateInitialSolution();
     naiveGenerateInitialSolution();
-    penalty = evalSolution(schedule) * 0.6;
+    penalty = evalSolution(schedule)*0.6;
+    // penalty = evalSolution(schedule)*1.8;
+    // penalty = 1800;
   }
 
   public static void initializeFields(VRPInstance instance) {
@@ -102,25 +104,81 @@ public class Solution {
       demandLeft[vehicleNum] += demand;
       schedule[vehicleNum].add(customers.get(i));
     }
-
-    System.out.println("Naive solution: " + evalSolution(schedule));
     for (int i = 0; i < schedule.length; i ++) {
-      heuristic.applyHeuristicRoute(schedule[i]);
+      insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
     }
-    System.out.println("TWO-OPT solution: " + evalSolution(schedule));
   }
+  
+    public void sweepGenerateInitialSolution() {
+    // generate a solution using the sweep algorithm
+    // start from the depot and add customers in order of angle
+    // if the demand exceeds the vehicle capacity, start a new route
+    // return the solution
+    System.out.println("Vehicle capacity: " + Solution.vehicleCapacity);
+    // pick random starting point
+    Random rand = new Random();
+    int start = rand.nextInt(Solution.angleList.size());
+    double capacityMultiplier = 1.0;
+    outer: while (true) {
+      int vehicleNum = 0;
+      for (int j = 0; j < schedule.length; j++) {
+        schedule[j] = new ArrayList<Customer>();
+      }
+      if (capacityMultiplier > 1.18) {
+        start = rand.nextInt(Solution.angleList.size());
+        capacityMultiplier = 1.1;
+        System.out.println("Restarting");
+      }
+      // System.out.println("Start: " + start);
+      for (int i = 0; i < Solution.angleList.size(); i++) {
+        start++;
+        if (start >= Solution.angleList.size()) {
+          start = 0;
+        }
+        Customer c = Solution.customers.get(Solution.angleList.get(start).getSecond());
+        // System.out.println("Added customer:" + start);
+        // System.out.println("vehicleNum:" + vehicleNum + " scheduleLength:" + schedule.length);
+        if (computeRouteDemand(schedule[vehicleNum]) + c.getDemand() < capacityMultiplier * Solution.vehicleCapacity) {
+          this.schedule[vehicleNum].add(c);
+        } else {
+          vehicleNum++;
+          // System.out.println("VehicleNum: " + vehicleNum);
+          if (vehicleNum >= schedule.length) {
+            // System.out.println("Restarting");
+            capacityMultiplier += 0.01;
+            continue outer;
+          }
+          this.schedule[vehicleNum] = new ArrayList<Customer>();
+          this.schedule[vehicleNum].add(c);
+        }
+      }
+      break;
+    }
+    System.out.println("Capacity Multiplier: " + capacityMultiplier);
+    for (int i = 0; i < schedule.length; i ++) {
+      insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
+    }
+  }
+
+
 
   public static double evalSolution(ArrayList<Customer>[] solution) {
     double totalDistance = 0.0;
+    // TODO: do we want penalize for each route or just if any route exceeds capacity?
+    // boolean penalize = false;
     for (int i = 0; i < solution.length; i++) {
       totalDistance += computeRouteDistance(solution[i]);
       double demand = computeRouteDemand(solution[i]);
       
       if (demand > Solution.vehicleCapacity) {
+        // penalize = true;
         // penalize the solution
         totalDistance += penalty;
       }
     }
+    // if (penalize) {
+    //   totalDistance += penalty;
+    // }
     return totalDistance;
   }
 
@@ -162,6 +220,7 @@ public class Solution {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public ArrayList<Customer>[] takeRandomStep(ArrayList<Customer>[] schedule) {
     // randomly select a vehicle and a customer and move that customer to a different vehicle
     // needs to be improved lol
@@ -177,7 +236,20 @@ public class Solution {
     // System.out.println("Old Schedule: " + printSchedule(schedule));
     ArrayList<Customer>[] scheduleNew = copySchedule(schedule);
     Customer customerRemove = removalHeuristic.removeHeuristic(scheduleNew[vehicle1]);
-    this.heuristic.applyHeuristic(customerRemove, scheduleNew[vehicle2]);
+    ArrayList<Customer> bestRoute = (ArrayList<Customer>) scheduleNew[vehicle2].clone();
+    bestRoute.add(customerRemove);
+    double bestDistance = computeRouteDistance(bestRoute);
+    for (int i = 0; i < insertionHeuristics.length; i++) {
+      ArrayList<Customer> newRoute = (ArrayList<Customer>) scheduleNew[vehicle2].clone();
+      insertionHeuristics[i].applyHeuristic(customerRemove, newRoute);
+      if (computeRouteDistance(newRoute) < bestDistance) {
+        bestRoute = newRoute;
+        bestDistance = computeRouteDistance(newRoute);
+      }
+    }
+    scheduleNew[vehicle2] = bestRoute;
+    // TODO: for solutions that are infeasible, remove the smallest customer such that the solution is feasible
+    // this.heuristic.applyHeuristic(customerRemove, scheduleNew[vehicle2]);
     // int addPosition = OptimalAddition(vehicle2, schedule[vehicle1].get(customer1));
     // System.out.println("Vehicle1: " + vehicle1 + " Vehicle2: " + vehicle2 + " Customer1(M): " + customerRemove);
     // System.out.println("New Schedule: " + printSchedule(scheduleNew));
@@ -208,7 +280,7 @@ public class Solution {
     for (int i = 0; i < this.schedule.length; i++) {
         clonedSolution.schedule[i] = new ArrayList<Customer>(this.schedule[i]);
     }
-    clonedSolution.heuristic = this.heuristic;
+    clonedSolution.insertionHeuristics = this.insertionHeuristics;
     clonedSolution.removalHeuristic = this.removalHeuristic;
     
     return clonedSolution;
@@ -217,13 +289,14 @@ public class Solution {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
+    sb.append("Vehicle Capacity: " + Solution.vehicleCapacity + "\n");
     for (int i = 0; i < schedule.length; i++) {
       sb.append("Vehicle " + i + ": ");
       for (int j = 0; j < schedule[i].size(); j++) {
         Customer c = schedule[i].get(j);
         sb.append(c);
       }
-      sb.append("\n");
+      sb.append(", Distance: " + computeRouteDistance(schedule[i]) + ", Demand: " + computeRouteDemand(schedule[i]) + "\n");
     }
     sb.append("total_distance: " + Solution.evalSolution(schedule) + "\n");
     return sb.toString();
@@ -252,6 +325,21 @@ public class Solution {
         sb.append(schedule[i].get(j).getId() + " ");
       }
       sb.append("0 ");
+    }
+    // remove last space
+    sb.deleteCharAt(sb.length() - 1);
+    return sb.toString();
+  }
+
+  public String fileOutputFormat() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(Math.round(evalSolution(schedule)) + " 0\n");
+    for (int i = 0; i < schedule.length; i++) {
+      sb.append("0 ");
+      for (int j = 0; j < schedule[i].size(); j++) {
+        sb.append(schedule[i].get(j).getId() + " ");
+      }
+      sb.append("0\n");
     }
     // remove last space
     sb.deleteCharAt(sb.length() - 1);

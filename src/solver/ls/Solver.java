@@ -15,24 +15,24 @@ public class Solver {
     int maxIter;
     int restartIter;
     VRPInstance instance;
-    InsertionHeuristic heuristic;
+    InsertionHeuristic[] insertionHeuristics;
     RemoveHeuristic removalHeuristic;
 
     public Solver(float t, float tMin, float alpha, int maxIter, int restartIter, 
-    VRPInstance instance, InsertionHeuristic heuristic, RemoveHeuristic removalHeuristic) {
+    VRPInstance instance, InsertionHeuristic[] insertionHeuristics, RemoveHeuristic removalHeuristic) {
         this.t = t;
         this.tMin = tMin;
         this.alpha = alpha;
         this.maxIter = maxIter;
         this.restartIter = restartIter;
         this.instance = instance;
-        this.heuristic = heuristic;
+        this.insertionHeuristics = insertionHeuristics;
         this.removalHeuristic = removalHeuristic;
     }
 
     public Solution solve() {
         Solution.initializeFields(instance);
-        Solution currSolution = new Solution(instance, heuristic, removalHeuristic);
+        Solution currSolution = new Solution(instance, insertionHeuristics, removalHeuristic);
         // Solution currSolution = Solution.initializeSolution(instance, 10);
         // currSolution.sweepGenerateSolution();
         System.out.println("Initial solution: " + currSolution);
