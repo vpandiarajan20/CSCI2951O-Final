@@ -50,7 +50,7 @@ public class Solution {
     Solution.vehicleCapacity = instance.vehicleCapacity;
     Solution.customers = new ArrayList<Customer>();
     for (int i = 0; i < instance.numCustomers; i++) {
-      Solution.customers.add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i], i));
+      Solution.customers.add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i], i+1));
     }
     // sort customers by demand, descending
     Solution.customers.sort((a, b) -> b.getDemand() - a.getDemand());
@@ -211,7 +211,8 @@ public class Solution {
     // calculate acceptance probability
     // take a step in the direction based on acceptance probability
     double energyCurrent = evalSolution(schedule);
-    ArrayList<Customer>[] scheduleNew = takeRandomStep(schedule);
+    // ArrayList<Customer>[] scheduleNew = takeRandomStep(schedule);
+    ArrayList<Customer>[] scheduleNew = takeRandomStepSwap(schedule);
     double energyNew = evalSolution(scheduleNew);
     double acceptProb = Solution.acceptanceProbability(energyCurrent, energyNew, temperature);
     System.out.println("Acceptance Prob: " + acceptProb + " Energy Current: " + energyCurrent + " Energy New: " + energyNew);
@@ -249,16 +250,55 @@ public class Solution {
     }
     scheduleNew[vehicle2] = bestRoute;
     // TODO: for solutions that are infeasible, remove the smallest customer such that the solution is feasible
-    // this.heuristic.applyHeuristic(customerRemove, scheduleNew[vehicle2]);
-    // int addPosition = OptimalAddition(vehicle2, schedule[vehicle1].get(customer1));
-    // System.out.println("Vehicle1: " + vehicle1 + " Vehicle2: " + vehicle2 + " Customer1(M): " + customerRemove);
-    // System.out.println("New Schedule: " + printSchedule(scheduleNew));
-    // // if (addPosition == -1) {
-    // //   addPosition = rand.nextInt(schedule[vehicle2].size());
-    // // }
-    // scheduleNew[vehicle2].add(addPosition, schedule[vehicle1].get(customer1));
-    // scheduleNew[vehicle1].remove(customer1);
+    return scheduleNew;
+  }
 
+  @SuppressWarnings("unchecked")
+  public ArrayList<Customer>[] takeRandomStepSwap(ArrayList<Customer>[] schedule) {
+    // randomly select a vehicle and a customer and move that customer to a different vehicle
+    // needs to be improved lol
+    Random rand = new Random();
+    int vehicle1 = rand.nextInt(schedule.length);
+    while (schedule[vehicle1].size() == 0) {
+      vehicle1 = rand.nextInt(schedule.length);
+    }
+    int vehicle2 = rand.nextInt(schedule.length);
+    if (vehicle1 == vehicle2) {
+      vehicle2 = (vehicle2 + 1) % schedule.length;
+    }
+    // System.out.println("Old Schedule: " + printSchedule(schedule));
+    ArrayList<Customer>[] scheduleNew = copySchedule(schedule);
+
+    Customer customer1Remove = removalHeuristic.removeHeuristic(scheduleNew[vehicle1]);
+    Customer customer2Remove = removalHeuristic.removeHeuristic(scheduleNew[vehicle2]);
+
+    ArrayList<Customer> bestRoute1 = (ArrayList<Customer>) scheduleNew[vehicle1].clone();
+    ArrayList<Customer> bestRoute2 = (ArrayList<Customer>) scheduleNew[vehicle2].clone();
+    
+    bestRoute1.add(customer2Remove);
+    bestRoute2.add(customer1Remove);
+    
+    double bestDistance1 = computeRouteDistance(bestRoute1);
+    double bestDistance2 = computeRouteDistance(bestRoute2);
+
+    for (int i = 0; i < insertionHeuristics.length; i++) {
+      ArrayList<Customer> newRoute1 = (ArrayList<Customer>) scheduleNew[vehicle1].clone();
+      insertionHeuristics[i].applyHeuristic(customer2Remove, newRoute1);
+      if (computeRouteDistance(newRoute1) < bestDistance1) {
+        bestRoute1 = newRoute1;
+        bestDistance1 = computeRouteDistance(newRoute1);
+      }
+
+      ArrayList<Customer> newRoute2 = (ArrayList<Customer>) scheduleNew[vehicle2].clone();
+      insertionHeuristics[i].applyHeuristic(customer1Remove, newRoute2);
+      if (computeRouteDistance(newRoute2) < bestDistance2) {
+        bestRoute2 = newRoute2;
+        bestDistance2 = computeRouteDistance(newRoute2);
+      }
+    }
+    scheduleNew[vehicle1] = bestRoute1;
+    scheduleNew[vehicle2] = bestRoute2;
+    // TODO: for solutions that are infeasible, remove the smallest customer such that the solution is feasible
     return scheduleNew;
   }
 

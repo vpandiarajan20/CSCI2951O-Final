@@ -37,6 +37,7 @@ public class Solver {
         // currSolution.sweepGenerateSolution();
         System.out.println("Initial solution: " + currSolution);
         double currEnergy = Solution.evalSolution(currSolution.schedule);
+        t = (float) currEnergy;
         double bestEnergy = currEnergy;
         Solution bestSolution = currSolution.clone();
         int iter = 0;
