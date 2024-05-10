@@ -66,7 +66,7 @@ public class Solver {
                 }
             }
             iter++;
-            System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
+            // System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
             t = t * alpha;
         }
         // for (int i = 0; i < bestSolution.schedule.length; i++) {
