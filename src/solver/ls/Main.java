@@ -7,13 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Random;
 
-import solver.ls.insertionHeuristics.InsertionHeuristic;
-import solver.ls.insertionHeuristics.NearestNeighbor;
-import solver.ls.insertionHeuristics.ThreeOpt;
-import solver.ls.insertionHeuristics.TwoOpt;
-import solver.ls.removalHeuristics.FeasibleRemoval;
-import solver.ls.removalHeuristics.RandomRemoval;
-import solver.ls.removalHeuristics.TopkRemoval;
 
 public class Main {
 	public static void main(String[] args) {
@@ -33,7 +26,8 @@ public class Main {
 
 		VRPInstance instance = new VRPInstance(input);
 		// Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 50000, 1500, instance, new TwoOpt(), new TopkRemoval());
-		Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 500000, 1500, instance, new InsertionHeuristic[]{new TwoOpt(), new ThreeOpt(), new NearestNeighbor()}, new RandomRemoval());
+		// Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 500000, 1500, instance, new InsertionHeuristic[]{new TwoOpt(), new ThreeOpt(), new NearestNeighbor()}, new RandomRemoval());
+		Solver solver = new Solver(100.0f, 0.01f, 0.99999f, 1000, 1500, instance);
 		Solution solution = solver.solve();
 
 		watch.stop();

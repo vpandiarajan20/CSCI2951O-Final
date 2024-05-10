@@ -2,336 +2,130 @@ package solver.ls;
 import java.util.ArrayList;
 import java.util.Random;
 
-import solver.ls.insertionHeuristics.InsertionHeuristic;
-import solver.ls.removalHeuristics.RemoveHeuristic;
 
 public class Solution {
-  // function to evaluate solution
-  // function to calculate neighborhood
-  // take a step in the direction based on acceptance probability
 
-  public static double acceptanceProbability(double energyCurrent, double energyNew, double temperature) {
-    if (energyNew < energyCurrent) {
-      return 1.0;
-    }
-    return Math.exp((energyCurrent - energyNew) / temperature);
-  }
-  
-  // 2D array, each row is a vehicle route, each column is a customer
+
+  // ---------------------------------------------------------- Fields ------------------------------------------------
   public static int vehicleCapacity;
   static double[][] distanceMatrix; 
   static ArrayList<Tuple<Double, Integer>>[] nearestNeighborsMatrix;
-  static ArrayList<Tuple<Double, Integer>> angleList;
-  static ArrayList<Customer> customers;
+  static Customer[] customers;
+  static ArrayList<Customer> sortedCustomers;
   static double penalty = 0.0;
+  static boolean testing = true; // TODO: Remember to disable
 
-  InsertionHeuristic[] insertionHeuristics;
-  RemoveHeuristic removalHeuristic;
-  ArrayList<Customer>[] schedule;
+  // InsertionHeuristic[] insertionHeuristics;
+  // RemoveHeuristic removalHeuristic;
+  
+  ArrayList<Integer>[] schedule;
+  double[] routeDistances;
+  double[] routeDemands;
+  double[] routePenalties;
 
+  // ---------------------------------------------------------- Constructors ------------------------------------------------
   public Solution() {
   }
   
   @SuppressWarnings("unchecked")
-  public Solution(VRPInstance instance, InsertionHeuristic[] insertionHeuristics, RemoveHeuristic removalHeuristic) {
+  public Solution(VRPInstance instance) {
     schedule = new ArrayList[instance.numVehicles];
     for (int i = 0; i < instance.numVehicles; i++) {
-      schedule[i] = new ArrayList<Customer>();
+      schedule[i] = new ArrayList<Integer>();
     }
-    this.insertionHeuristics = insertionHeuristics;
-    this.removalHeuristic = removalHeuristic;
-    // sweepGenerateInitialSolution();
+    routeDemands = new double[instance.numVehicles];
+    routeDistances = new double[instance.numVehicles];
+    routePenalties = new double[instance.numVehicles];
+    // this.insertionHeuristics = insertionHeuristics;
+    // this.removalHeuristic = removalHeuristic;
     naiveGenerateInitialSolution();
-    // penalty = evalSolution(schedule)*0.6;
-    // penalty = evalSolution(schedule)*1.8;
-    // penalty = 1800;
   }
 
-  public static void initializeFields(VRPInstance instance) {
-    Solution.vehicleCapacity = instance.vehicleCapacity;
-    Solution.customers = new ArrayList<Customer>();
-    for (int i = 0; i < instance.numCustomers; i++) {
-      Solution.customers.add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i], i+1));
-    }
-    // sort customers by demand, descending
-    Solution.customers.sort((a, b) -> b.getDemand() - a.getDemand());
-    computeDistanceMatrix(instance);
-    computeAngleList(instance);
-  }
-  
 
-  
-  @SuppressWarnings("unchecked")
-  public static void computeDistanceMatrix(VRPInstance instance){
-        double[][] distanceMatrix = new double[instance.numCustomers][instance.numCustomers];
-        Solution.nearestNeighborsMatrix = new ArrayList[instance.numCustomers];
-        double maxDistance = 0.0;
-        double maxDemand = 0.0;
-        double totalDemand = 0.0;
-        double totalCapacity = instance.numVehicles * instance.vehicleCapacity;
-        for (int i = 0; i < instance.numCustomers; i++) {
-          totalDemand += instance.demandOfCustomer[i];
-          maxDemand = Math.max(maxDemand, instance.demandOfCustomer[i]);
-          nearestNeighborsMatrix[i] = new ArrayList<Tuple<Double, Integer>>();
-            for (int j = 0; j < instance.numCustomers; j++) {
-                if (i == j) {
-                    distanceMatrix[i][j] = 0.0;
-                } else {
-                    // System.out.print("i: " + i + " j: " + j + " x: " + instance.xCoordOfCustomer[i] + " y: " + instance.yCoordOfCustomer[i] + " x: " + instance.xCoordOfCustomer[j] + " y: " + instance.yCoordOfCustomer[j] + "\n");
-                    distanceMatrix[i][j] = Math.pow(instance.xCoordOfCustomer[i] - instance.xCoordOfCustomer[j], 2) + Math.pow(instance.yCoordOfCustomer[i] - instance.yCoordOfCustomer[j], 2);
-                    nearestNeighborsMatrix[i].add(new Tuple<Double, Integer>(distanceMatrix[i][j], j));
-                    maxDistance = Math.max(maxDistance, distanceMatrix[i][j]);
-                }
-            }
-            nearestNeighborsMatrix[i].sort((a, b) -> a.getFirst().compareTo(b.getFirst()));
-        }
-        Solution.distanceMatrix = distanceMatrix;
-        Solution.penalty = Math.max(0.1, Math.min(1000, maxDistance/maxDemand));
-        // System.out.println("Max Distance: " + maxDistance + " Max Demand: " + maxDemand + " Total Demand: " + totalDemand + " Total Capacity: " + totalCapacity + " Ratio: " + totalDemand/totalCapacity);
-    }
-  
-  public static void computeAngleList(VRPInstance instance) {
-    ArrayList<Tuple<Double, Integer>> angleList = new ArrayList<Tuple<Double, Integer>>();
-    for (int i = 0; i < instance.numCustomers; i++) {
-      double angle = Math.atan2(customers.get(i).getY(), customers.get(i).getX());
-      angleList.add(new Tuple<Double, Integer>(angle, i));
-    }
-    angleList.sort((a, b) -> a.getFirst().compareTo(b.getFirst()));
-    Solution.angleList = angleList;
-  }
+  // ---------------------------------------------------------- Iterative Functions ------------------------------------------------
 
-  public void naiveGenerateInitialSolution() {
-    // select customers by size
-    int demand = 0;
-    int vehicleNum = 0;
-    int[] demandLeft = new int[schedule.length];
-    
-    // for (int i = 0; i < customers.size(); i++) {
-    //   demand = customers.get(i).getDemand();
-    //   while (demandLeft[vehicleNum] + demand > Solution.vehicleCapacity) {
-    //     vehicleNum++;
-    //     if (vehicleNum >= schedule.length) {
-    //       // no more vehicles
-    //       vehicleNum = 0;
-    //     }
-    //   }
-      
-    //   demandLeft[vehicleNum] += demand;
-    //   schedule[vehicleNum].add(customers.get(i));
-    // }
-    for (int i = 0; i < customers.size(); i++) {
-      demand = customers.get(i).getDemand();
-      for (int j = 0; j < demandLeft.length; j++) {
-        if (demandLeft[j] + demand <= Solution.vehicleCapacity) {
-          schedule[j].add(customers.get(i));
-          demandLeft[j] += demand;
-          break;
-        }
-      }
-    }
-    
-    for (int i = 0; i < schedule.length; i ++) {
-      insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
-    }
-   }
-  
-    public void sweepGenerateInitialSolution() {
-    // generate a solution using the sweep algorithm
-    // start from the depot and add customers in order of angle
-    // if the demand exceeds the vehicle capacity, start a new route
-    // return the solution
-    // System.out.println("Vehicle capacity: " + Solution.vehicleCapacity);
-    // pick random starting point
+
+
+
+  public void takeRandomStep() {
+    boolean searchCompleted = false;
     Random rand = new Random();
-    int start = rand.nextInt(Solution.angleList.size());
-    double capacityMultiplier = 1.0;
-    outer: while (true) {
-      int vehicleNum = 0;
-      for (int j = 0; j < schedule.length; j++) {
-        schedule[j] = new ArrayList<Customer>();
-      }
-      if (capacityMultiplier > 1.18) {
-        start = rand.nextInt(Solution.angleList.size());
-        capacityMultiplier = 1.1;
-        // System.out.println("Restarting");
-      }
-      // System.out.println("Start: " + start);
-      for (int i = 0; i < Solution.angleList.size(); i++) {
-        start++;
-        if (start >= Solution.angleList.size()) {
-          start = 0;
-        }
-        Customer c = Solution.customers.get(Solution.angleList.get(start).getSecond());
-        // System.out.println("Added customer:" + start);
-        // System.out.println("vehicleNum:" + vehicleNum + " scheduleLength:" + schedule.length);
-        if (computeRouteDemand(schedule[vehicleNum]) + c.getDemand() < capacityMultiplier * Solution.vehicleCapacity) {
-          this.schedule[vehicleNum].add(c);
-        } else {
-          vehicleNum++;
-          // System.out.println("VehicleNum: " + vehicleNum);
-          if (vehicleNum >= schedule.length) {
-            // System.out.println("Restarting");
-            capacityMultiplier += 0.01;
-            continue outer;
-          }
-          this.schedule[vehicleNum] = new ArrayList<Customer>();
-          this.schedule[vehicleNum].add(c);
-        }
-      }
-      break;
-    }
-    // System.out.println("Capacity Multiplier: " + capacityMultiplier);
-    for (int i = 0; i < schedule.length; i ++) {
-      insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
-    }
-  }
-
-
-
-  public static double evalSolution(ArrayList<Customer>[] solution) {
-    double totalDistance = 0.0;
-    // TODO: do we want penalize for each route or just if any route exceeds capacity?
-    // boolean penalize = false;
-    for (int i = 0; i < solution.length; i++) {
-      totalDistance += computeRouteValue(solution[i]);
-    }
-    // if (penalize) {
-    //   totalDistance += penalty;
-    // }
-    return totalDistance;
-  }
-
-  public static void incrementPenalty() {
-    penalty *= 1.2;
-    penalty = Math.min(penalty, 100000);
-  }
-
-  public static double computeRouteDistance(ArrayList<Customer> solution) {
-    double totalDistance = 0.0;
-    for (int j = 0; j < solution.size(); j++) {
-        // System.out.println("Customer: " + solution.get(j));
-        if (j == 0) {
-          totalDistance += solution.get(j).distanceToDepot();
-        } else {
-          totalDistance += solution.get(j).distanceTo(solution.get(j - 1));
-        }
-      }
-    if (solution.size() > 0) {
-      totalDistance += solution.get(solution.size() - 1).distanceToDepot();
-    }
-    return totalDistance;
-  }
-
-  public static double computeRouteDemand(ArrayList<Customer> solution) {
-    double totalDemand = 0.0;
-    for (int j = 0; j < solution.size(); j++) {
-      totalDemand += solution.get(j).getDemand();
-    }
-    return totalDemand;
-  }
-
-  public static double computeRouteValue(ArrayList<Customer> solution) {
-    // System.out.println("Route distance: " + computeRouteDistance(solution) + " Route demand: " + computeRouteDemand(solution) + " Penalty: " + penalty);
-    return computeRouteDistance(solution) + Math.max(0.0, computeRouteDemand(solution) - Solution.vehicleCapacity) * penalty;
-  }
-
-  public void perturbSolution(double temperature) {
-    // generate a random neighbor
-    // calculate acceptance probability
-    // take a step in the direction based on acceptance probability
-    double energyCurrent = evalSolution(schedule);
-    ArrayList<Customer>[] scheduleNew = takeRandomStep(schedule);
-    // ArrayList<Customer>[] scheduleNew = takeRandomStepSwap(schedule);
-    // ArrayList<Customer>[] scheduleNew = takeRandomStepRemoveAndInsert(schedule);
-    double energyNew = evalSolution(scheduleNew);
-    double acceptProb = Solution.acceptanceProbability(energyCurrent, energyNew, temperature);
-    // System.out.println("Acceptance Prob: " + acceptProb + " Energy Current: " + energyCurrent + " Energy New: " + energyNew);
-    if (acceptProb > Math.random()) {
-      schedule = scheduleNew;
-    }
-  }
-
-
-  // @SuppressWarnings("unchecked")
-  // public ArrayList<Customer>[] takeRandomStepLoop(ArrayList<Customer>[] schedule) {
-  //   boolean searchCompleted = false;
-  //   Random rand = new Random();
-  //   int numNodesToSearch = 10;
-  //   int numNeighborsToSearch = 10;
+    int numNodesToSearch = Math.min(6, customers.length-1);
+    int numNeighborsToSearch = Math.min(10, nearestNeighborsMatrix[1].size());
     
-  //   // ArrayList<Customers> shuffled Customers = new ArrayList<Customers>(customers);
-  //   // Collections.shuffle(shuffledCustomers);
-  //   for (int loopID = 0; !searchCompleted; loopID++) {
-  //     if (loopID > 1) {
-  //       searchCompleted = true;
-  //     }
-  //     for (int i = 0; i < numNodesToSearch; i++) {
-  //       int vehicle1 = rand.nextInt(schedule.length);
-  //       ArrayList<Customer> vehicle1Route = (ArrayList<Customer>) schedule[vehicle1].clone();
-  //       while (vehicle1Route.size() == 0) {
-  //         vehicle1 = rand.nextInt(schedule.length);
-  //       }
-  //       Customer customer1 = vehicle1Route.get(rand.nextInt(schedule[vehicle1].size()));
-  //       for (int j = 0; j < numNeighborsToSearch; j++) {
-  //         // selecting customer 2
-  //         int customer2ID = Solution.nearestNeighborsMatrix[customer1.getId()].get(j).getSecond();
-  //         if (customer2ID == customer1.getId()) {
-  //           throw new RuntimeException("Customer 2 is the same as customer 1, you're an idiot");
-  //         }
-  //         Customer customer2 = customers.get(customer2ID);
-  //         ArrayList<Customer> vehicle2Route = null;
-  //         // this is mega dumb, but we need to change customer class
-  //         for (int k = 0; k < schedule.length; k++) {
-  //           if (schedule[k].contains(customer2)) {
-  //             vehicle2Route = (ArrayList<Customer>) schedule[k].clone();
-  //             break;
-  //           }
-  //         }
 
-
-  //         // apply moves
-  //         if (loopID == 0) {
-  //           if (move1(customer1, customer2, vehicle1Route, vehicle2Route)) {
-  //             searchCompleted = false;
-  //             continue;
-  //           }
-  //         }
-  //       }
-  //       // 10 is a magic number needs to be configured
-
-  //     }
-  //   }
-  //   return null;
-  // }
+    while (!searchCompleted) {
+      searchCompleted = true;
+      for (int i = 0; i < numNodesToSearch; i++) {
+        Customer customer1 = customers[rand.nextInt(customers.length-1) + 1];
+        // TODO: should not select the same customer twice
+        for (int j = 0; j < numNeighborsToSearch; j++) {
+          // selecting customer 2
+          int customer2ID = Solution.nearestNeighborsMatrix[customer1.getId()].get(j).getSecond();
+          if (customer2ID == customer1.getId()) {
+            throw new RuntimeException("Customer 2 is the same as customer 1, you're an idiot");
+          }
+          Customer customer2 = customers[customer2ID];
+          assert customer2.getId() == customer2ID;
+          
+          // System.out.println("Attempting Moves");
+          if (move1(customer1, customer2)) {
+            searchCompleted = false;
+            continue;
+          }
+        }
+      }
+    }
+  }
 
   // @SuppressWarnings("unchecked")
-  // public boolean move1(Customer customer1, Customer customer2, ArrayList<Customer> route1, ArrayList<Customer> route2) {
-  //   // dude if they're the same route this might be totally fucked
-  //   if (route1 == route2) {
-  //     ArrayList<Customer> copyRoute = (ArrayList<Customer>) route1.clone();
-  //     copyRoute.remove(customer1);
-  //     int idxOfCustomer2 = copyRoute.indexOf(customer2);
-  //     copyRoute.add(idxOfCustomer2, customer1);
-  //     if (computeRouteValue(copyRoute) < computeRouteValue(route1)) {
-  //       route1 = copyRoute1;
-  //       return true;
-  //     }
-  //     return false;
-  //   }
-  //   ArrayList<Customer> copyRoute1 = (ArrayList<Customer>)route1.clone();
-  //   ArrayList<Customer> copyRoute2 = (ArrayList<Customer>) route2.clone();
-  //   copyRoute1.remove(customer1);
-  //   int idxOfCustomer2 = copyRoute2.indexOf(customer2);
-  //   copyRoute2.add(idxOfCustomer2, customer1);
+  public boolean move1(Customer customer1, Customer customer2) {
+    // remove customer1 from route1, add customer1 to route2, after customer2
+    
+    ArrayList<Integer> route1 = schedule[customer1.getRouteId()];
+    ArrayList<Integer> route2 = schedule[customer2.getRouteId()];
 
-  //   if (computeRouteValue(copyRoute2) + computeRouteValue(copyRoute1) < computeRouteValue(route1) + computeRouteValue(route2)) {
-  //     route1 = copyRoute1;
-  //     route2 = copyRoute2;
-  //     return true;
-  //   }
-  //   return false;
-  //   //TODO:
-  // }
+    int customer1Index = route1.indexOf(customer1.getId());
+    assert customer1Index != -1;
+    int customer2Index = route2.indexOf(customer2.getId());
+    assert customer1Index != -1;
+
+    // System.out.println("Customer 1: " + customer1 + " Customer 2: " + customer2 + " Route 1: " + route1 + " Route 2: " + route2 + " Customer 1 Index: " + customer1Index + " Customer 2 Index: " + customer2Index);
+    int[] customer1NeighborIDs = getPreviousAndNextCustomer(customer1.getRouteId(), customer1Index);
+    int[] customer2NeighborIDs = getPreviousAndNextCustomer(customer2.getRouteId(), customer2Index);
+
+    double removeC1Delta = distanceMatrix[customer1NeighborIDs[0]][customer1NeighborIDs[1]] - distanceMatrix[customer1.getId()][customer1NeighborIDs[0]] - distanceMatrix[customer1.getId()][customer1NeighborIDs[1]];
+    double addC1Delta = distanceMatrix[customer1.getId()][customer2.getId()] + distanceMatrix[customer1.getId()][customer2NeighborIDs[1]] - distanceMatrix[customer2.getId()][customer2NeighborIDs[1]];
+
+    if (customer1.getRouteId() == customer2.getRouteId()) {
+      if (addC1Delta + removeC1Delta < 0) {
+        route1.remove(customer1Index);
+        customer2Index = route2.indexOf(customer2.getId());
+        route1.add(customer2Index + 1, customer1.getId());
+        routeDistances[customer1.getRouteId()] += addC1Delta + removeC1Delta;
+        return true;
+      }
+      return false;
+    } else {
+      if (addC1Delta + removeC1Delta < routePenalties[customer1.getRouteId()] + routePenalties[customer2.getRouteId()]) {
+        double removeC1Penalties = computePenalty(routeDemands[customer1.getRouteId()] - customer1.getDemand()) - routePenalties[customer1.getRouteId()];
+        double addC1Penalties = computePenalty(routeDemands[customer2.getRouteId()] + customer1.getDemand()) - routePenalties[customer2.getRouteId()];
+        if (addC1Delta + removeC1Delta < removeC1Penalties + addC1Penalties) {
+          route1.remove(customer1Index);
+          route2.add(customer2Index + 1, customer1.getId());
+          routeDistances[customer1.getRouteId()] += removeC1Delta;
+          routeDistances[customer2.getRouteId()] += addC1Delta;
+          routeDemands[customer1.getRouteId()] -= customer1.getDemand();
+          routeDemands[customer2.getRouteId()] += customer1.getDemand();
+          routePenalties[customer1.getRouteId()] = computePenalty(routeDemands[customer1.getRouteId()]);
+          routePenalties[customer2.getRouteId()] = computePenalty(routeDemands[customer2.getRouteId()]);
+          customer1.setRouteId(customer2.getRouteId());
+          return true;
+        }
+      }
+      return false;
+    }
+  }
 
   // public boolean move2(Customer customer1, Customer customer2, ArrayList<Customer> route1, ArrayList<Customer> route2) {
   //   if (route1 == route2) {
@@ -346,124 +140,224 @@ public class Solution {
   //   }
   // }
 
-  public ArrayList<Customer>[] takeRandomStep(ArrayList<Customer>[] schedule) {
-    ArrayList<Customer>[] schedule1 = copySchedule(schedule);
-    schedule1 = takeRandomStepRemoveAndInsert(schedule1);
-    ArrayList<Customer>[] schedule2 = copySchedule(schedule);
-    schedule2 = takeRandomStepSwap(schedule2);
-    if (evalSolution(schedule1) < evalSolution(schedule2)) {
-      return schedule1;
-    }
-    return schedule2;
+  // public ArrayList<Integer>[] takeRandomStep(ArrayList<Integer>[] schedule) {
+  //   ArrayList<Customer>[] schedule1 = copySchedule(schedule);
+  //   schedule1 = takeRandomStepRemoveAndInsert(schedule1);
+  //   ArrayList<Customer>[] schedule2 = copySchedule(schedule);
+  //   schedule2 = takeRandomStepSwap(schedule2);
+  //   if (evalSolution(schedule1) < evalSolution(schedule2)) {
+  //     return schedule1;
+  //   }
+  //   return schedule2;
+  // }
+
+
+  public static void incrementPenalty() {
+    penalty *= 1.2;
+    penalty = Math.min(penalty, 100000);
   }
 
 
+  // ---------------------------------------------------------- Misc Helpers ------------------------------------------------
 
-  @SuppressWarnings("unchecked")
-  public ArrayList<Customer>[] takeRandomStepRemoveAndInsert(ArrayList<Customer>[] schedule) {
-    // randomly select a vehicle and a customer and move that customer to a different vehicle
-    // needs to be improved lol
-    Random rand = new Random();
-    int vehicle1 = rand.nextInt(schedule.length);
-    while (schedule[vehicle1].size() == 0) {
-      vehicle1 = rand.nextInt(schedule.length);
+  public int[] getPreviousAndNextCustomer(int routeId, int customerIndex) {
+    ArrayList<Integer> route = schedule[routeId];
+    int[] prevAndNext = new int[2];
+    // System.out.println("Route: " + route + " Customer Index: " + customerIndex);
+    assert route.size() > 0;
+    if (route.size() == 1) {
+      prevAndNext[0] = 0;
+      prevAndNext[1] = 0;
+    } else if (customerIndex == 0) {
+      prevAndNext[0] = 0;
+      prevAndNext[1] = route.get(1);
+    } else if (customerIndex == route.size() - 1) {
+      prevAndNext[0] = route.get(route.size() - 2);
+      prevAndNext[1] = 0;
+    } else {
+      prevAndNext[0] = route.get(customerIndex - 1);
+      prevAndNext[1] = route.get(customerIndex + 1);
     }
-    int vehicle2 = rand.nextInt(schedule.length);
-    if (vehicle1 == vehicle2) {
-      vehicle2 = (vehicle2 + 1) % schedule.length;
-    }
-    // System.out.println("Old Schedule: " + printSchedule(schedule));
-    ArrayList<Customer>[] scheduleNew = copySchedule(schedule);
-    Customer customerRemove = removalHeuristic.removeHeuristic(scheduleNew[vehicle1]);
-    ArrayList<Customer> bestRoute = (ArrayList<Customer>) scheduleNew[vehicle2].clone();
-    bestRoute.add(customerRemove);
-    double bestDistance = computeRouteDistance(bestRoute);
-    for (int i = 0; i < insertionHeuristics.length; i++) {
-      ArrayList<Customer> newRoute = (ArrayList<Customer>) scheduleNew[vehicle2].clone();
-      insertionHeuristics[i].applyHeuristic(customerRemove, newRoute);
-      if (computeRouteDistance(newRoute) < bestDistance) {
-        bestRoute = newRoute;
-        bestDistance = computeRouteDistance(newRoute);
-      }
-    }
-    scheduleNew[vehicle2] = bestRoute;
-    // TODO: for solutions that are infeasible, remove the smallest customer such that the solution is feasible
-    return scheduleNew;
+    prevAndNext[0] = Math.max(0, prevAndNext[0]);
+    return prevAndNext;
   }
 
-  @SuppressWarnings("unchecked")
-  public ArrayList<Customer>[] takeRandomStepSwap(ArrayList<Customer>[] schedule) {
-    // randomly select a vehicle and a customer and move that customer to a different vehicle
-    // needs to be improved lol
-    Random rand = new Random();
-    int vehicle1 = rand.nextInt(schedule.length);
-    while (schedule[vehicle1].size() == 0) {
-      vehicle1 = rand.nextInt(schedule.length);
-    }
-    int vehicle2 = rand.nextInt(schedule.length);
-    while (vehicle1 == vehicle2 || schedule[vehicle2].size() == 0) {
-      vehicle2 = (vehicle2 + 1) % schedule.length;
-    }
-    // System.out.println("Old Schedule: " + printSchedule(schedule));
-    ArrayList<Customer>[] scheduleNew = copySchedule(schedule);
-
-    Customer customer1Remove = removalHeuristic.removeHeuristic(scheduleNew[vehicle1]);
-    Customer customer2Remove = removalHeuristic.removeHeuristic(scheduleNew[vehicle2]);
-
-    ArrayList<Customer> bestRoute1 = (ArrayList<Customer>) scheduleNew[vehicle1].clone();
-    ArrayList<Customer> bestRoute2 = (ArrayList<Customer>) scheduleNew[vehicle2].clone();
-    
-    bestRoute1.add(customer2Remove);
-    bestRoute2.add(customer1Remove);
-    
-    double bestDistance1 = computeRouteDistance(bestRoute1);
-    double bestDistance2 = computeRouteDistance(bestRoute2);
-
-    for (int i = 0; i < insertionHeuristics.length; i++) {
-      ArrayList<Customer> newRoute1 = (ArrayList<Customer>) scheduleNew[vehicle1].clone();
-      insertionHeuristics[i].applyHeuristic(customer2Remove, newRoute1);
-      if (computeRouteDistance(newRoute1) < bestDistance1) {
-        bestRoute1 = newRoute1;
-        bestDistance1 = computeRouteDistance(newRoute1);
-      }
-
-      ArrayList<Customer> newRoute2 = (ArrayList<Customer>) scheduleNew[vehicle2].clone();
-      insertionHeuristics[i].applyHeuristic(customer1Remove, newRoute2);
-      if (computeRouteDistance(newRoute2) < bestDistance2) {
-        bestRoute2 = newRoute2;
-        bestDistance2 = computeRouteDistance(newRoute2);
-      }
-    }
-    scheduleNew[vehicle1] = bestRoute1;
-    scheduleNew[vehicle2] = bestRoute2;
-    // TODO: for solutions that are infeasible, remove the smallest customer such that the solution is feasible
-    return scheduleNew;
+  public double computePenalty(double demand) {
+    return Math.max(0.0, demand - vehicleCapacity) * penalty;
   }
 
-  @SuppressWarnings("unchecked")
-  public static ArrayList<Customer>[] copySchedule(ArrayList<Customer>[] schedule) {
-    ArrayList<Customer>[] scheduleNew = new ArrayList[schedule.length];
+  public static double acceptanceProbability(double energyCurrent, double energyNew, double temperature) {
+    if (energyNew < energyCurrent) {
+      return 1.0;
+    }
+    return Math.exp((energyCurrent - energyNew) / temperature);
+  }
+
+  public void sanityCheck() {
     for (int i = 0; i < schedule.length; i++) {
-      scheduleNew[i] = (ArrayList<Customer>)schedule[i].clone();
+      assert routeDemands[i] == computeRouteDemand(schedule[i]);
+      assert routeDistances[i] == computeRouteDistance(schedule[i]);
+      assert routePenalties[i] == computePenalty(routeDemands[i]);
+      for (int j = 0; j < schedule[i].size(); j++) {
+        assert customers[schedule[i].get(j)].getRouteId() == i;
+      }
+    }
+
+  }
+
+
+  // ---------------------------------------------------------- Initialization Functions ------------------------------------------------
+  public static void initializeFields(VRPInstance instance) {
+    Solution.vehicleCapacity = instance.vehicleCapacity;
+    Solution.customers = new Customer[instance.numCustomers + 1];
+    Solution.sortedCustomers = new ArrayList<Customer>();
+    customers[0] = new Customer(0, 0, 0, 0, 0);
+    for (int i = 1; i < instance.numCustomers + 1; i++) {
+      customers[i] = new Customer(instance.xCoordOfCustomer[i-1], instance.yCoordOfCustomer[i-1], instance.demandOfCustomer[i-1], i, -1);
+      sortedCustomers.add(customers[i]);
+    }
+    // sort customers by demand, descending
+    Solution.sortedCustomers.sort((a, b) -> b.getDemand() - a.getDemand());
+    computeDistanceMatrix(instance);
+  }
+  
+
+  
+  @SuppressWarnings("unchecked")
+  public static void computeDistanceMatrix(VRPInstance instance){
+        double[][] distanceMatrix = new double[customers.length][customers.length];
+        Solution.nearestNeighborsMatrix = new ArrayList[customers.length];
+        double maxDistance = 0.0;
+        double maxDemand = 0.0;
+        double totalDemand = 0.0;
+        double totalCapacity = instance.numVehicles * instance.vehicleCapacity;
+        for (int i = 0; i < customers.length; i++) {
+          Customer customerI = customers[i];
+          totalDemand += customerI.getDemand();
+          maxDemand = Math.max(maxDemand, customerI.getDemand());
+          nearestNeighborsMatrix[i] = new ArrayList<Tuple<Double, Integer>>();
+            for (int j = 0; j < customers.length ; j++) {
+                Customer customerJ = customers[j];
+                if (i == j) {
+                    distanceMatrix[i][j] = 0.0;
+                } else {
+                    // System.out.print("i: " + i + " j: " + j + " x: " + instance.xCoordOfCustomer[i] + " y: " + instance.yCoordOfCustomer[i] + " x: " + instance.xCoordOfCustomer[j] + " y: " + instance.yCoordOfCustomer[j] + "\n");
+                    distanceMatrix[i][j] = Math.sqrt(Math.pow(customerI.getX() - customerJ.getX(), 2) + Math.pow(customerI.getY() - customerJ.getY(), 2));
+                    if (j != 0) {
+                      nearestNeighborsMatrix[i].add(new Tuple<Double, Integer>(distanceMatrix[i][j], j));
+                    }
+                    maxDistance = Math.max(maxDistance, distanceMatrix[i][j]);
+                }
+            }
+            nearestNeighborsMatrix[i].sort((a, b) -> a.getFirst().compareTo(b.getFirst()));
+        }
+        Solution.distanceMatrix = distanceMatrix;
+        Solution.penalty = Math.max(0.1, Math.min(1000, maxDistance/maxDemand));
+        // System.out.println("Max Distance: " + maxDistance + " Max Demand: " + maxDemand + " Total Demand: " + totalDemand + " Total Capacity: " + totalCapacity + " Ratio: " + totalDemand/totalCapacity);
+  }
+  
+  public void naiveGenerateInitialSolution() {
+    int demand = 0;
+    int[] demandLeft = new int[schedule.length];
+    for (int i = 1; i < customers.length; i++) {
+      demand = customers[i].getDemand();
+      for (int j = 0; j < demandLeft.length; j++) {
+        if (demandLeft[j] + demand <= Solution.vehicleCapacity) {
+          schedule[j].add(i);
+          customers[i].setRouteId(j);
+          assert customers[i].getRouteId() == j;
+          demandLeft[j] += demand;
+          break;
+        }
+      }
+    }
+    for (int i = 0; i < schedule.length; i++) {
+      routeDemands[i] = computeRouteDemand(schedule[i]);
+      assert routeDemands[i] <= Solution.vehicleCapacity;
+      routeDistances[i] = computeRouteDistance(schedule[i]);
+      assert routeDistances[i] >= 0;
+      routePenalties[i] = computePenalty(routeDemands[i]);
+      assert routePenalties[i] == 0;
+    }
+    // TODO: Fill demand, distance, and penalty arrays
+    
+    //TODO: Replace this
+    // for (int i = 0; i < schedule.length; i ++) {
+    //   insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
+    // }
+  }
+  
+  // ---------------------------------------------------------- Evaluation Functions ------------------------------------------------
+
+  public double evalSolution() {
+    double totalDistance = 0.0;
+    for (int i = 0; i < schedule.length; i++) {
+      totalDistance += computeRouteValue(schedule[i]);
+    }
+    return totalDistance;
+  }
+  
+  public double computeRouteDistance(ArrayList<Integer> solution) {
+    double totalDistance = 0.0;
+    for (int j = 0; j < solution.size(); j++) {
+        if (j == 0) {
+          totalDistance += customers[solution.get(j)].distanceToDepot();
+        } else {
+          totalDistance += customers[solution.get(j)].distanceTo(solution.get(j - 1));
+        }
+      }
+    if (solution.size() > 0) {
+      totalDistance += customers[solution.get(solution.size() - 1)].distanceToDepot();
+    }
+    return totalDistance;
+  }
+
+  public double computeRouteDemand(ArrayList<Integer> solution) {
+    double totalDemand = 0.0;
+    for (int j = 0; j < solution.size(); j++) {
+      totalDemand += customers[solution.get(j)].getDemand();
+    }
+    assert totalDemand == routeDemands[customers[solution.get(0)].getRouteId()];
+    assert customers[solution.get(0)].getRouteId() == customers[solution.get(solution.size() - 1)].getRouteId();
+    return totalDemand;
+  }
+
+  public double computeRouteValue(ArrayList<Integer> solution) {
+    return computeRouteDistance(solution) + Math.max(0.0, computeRouteDemand(solution) - Solution.vehicleCapacity) * penalty;
+  }
+
+  // ---------------------------------------------------------- Clone Functions ------------------------------------------------
+  @SuppressWarnings("unchecked")
+  public static ArrayList<Integer>[] copySchedule(ArrayList<Integer>[] schedule) {
+    ArrayList<Integer>[] scheduleNew = new ArrayList[schedule.length];
+    for (int i = 0; i < schedule.length; i++) {
+      scheduleNew[i] = (ArrayList<Integer>)schedule[i].clone();
     }
     return scheduleNew;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static ArrayList<Integer> copyRoute(ArrayList<Integer> route) {
+    return (ArrayList<Integer>)route.clone();
   }
   
   @SuppressWarnings("unchecked")
   public Solution clone() {
     Solution clonedSolution = new Solution();
-
     // Copy schedule array
     clonedSolution.schedule = new ArrayList[this.schedule.length];
     for (int i = 0; i < this.schedule.length; i++) {
-        clonedSolution.schedule[i] = new ArrayList<Customer>(this.schedule[i]);
+        clonedSolution.schedule[i] = new ArrayList<Integer>(this.schedule[i]);
     }
-    clonedSolution.insertionHeuristics = this.insertionHeuristics;
-    clonedSolution.removalHeuristic = this.removalHeuristic;
+    // clonedSolution.insertionHeuristics = this.insertionHeuristics;
+    // clonedSolution.removalHeuristic = this.removalHeuristic;
+    clonedSolution.routeDemands = this.routeDemands.clone();
+    clonedSolution.routeDistances = this.routeDistances.clone();
     
     return clonedSolution;
   }
 
+  //----------------------------------------------------------------- toString Functions ------------------------------------------------
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
@@ -471,36 +365,36 @@ public class Solution {
     for (int i = 0; i < schedule.length; i++) {
       sb.append("Vehicle " + i + ": ");
       for (int j = 0; j < schedule[i].size(); j++) {
-        Customer c = schedule[i].get(j);
+        Customer c = customers[schedule[i].get(j)];
         sb.append(c);
       }
       sb.append(", Distance: " + computeRouteDistance(schedule[i]) + ", Demand: " + computeRouteDemand(schedule[i]) + "\n");
     }
-    sb.append("total_distance: " + Solution.evalSolution(schedule) + "\n");
+    sb.append("total_distance: " + evalSolution() + "\n");
     return sb.toString();
   }
 
-  public static String printSchedule(ArrayList<Customer>[] newSchedule) {
+  public String printSchedule(ArrayList<Integer>[] newSchedule) {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < newSchedule.length; i++) {
       sb.append("Vehicle " + i + ": ");
       for (int j = 0; j < newSchedule[i].size(); j++) {
-        Customer c = newSchedule[i].get(j);
+        Customer c = customers[newSchedule[i].get(j)];
         sb.append(c);
       }
       sb.append("\n");
     }
-    sb.append("total_distance: " + Solution.evalSolution(newSchedule) + "\n");
+    sb.append("total_distance: " + evalSolution() + "\n");
     return sb.toString();
   }
 
   public String submissionFormat() {
     StringBuilder sb = new StringBuilder();
-    sb.append(Math.round(evalSolution(schedule)) + " 0 ");
+    sb.append(Math.round(evalSolution()) + " 0 ");
     for (int i = 0; i < schedule.length; i++) {
       sb.append("0 ");
       for (int j = 0; j < schedule[i].size(); j++) {
-        sb.append(schedule[i].get(j).getId() + " ");
+        sb.append(schedule[i].get(j) + " ");
       }
       sb.append("0 ");
     }
@@ -511,11 +405,11 @@ public class Solution {
 
   public String fileOutputFormat() {
     StringBuilder sb = new StringBuilder();
-    sb.append(Math.round(evalSolution(schedule)) + " 0\n");
+    sb.append(Math.round(evalSolution()) + " 0\n");
     for (int i = 0; i < schedule.length; i++) {
       sb.append("0 ");
       for (int j = 0; j < schedule[i].size(); j++) {
-        sb.append(schedule[i].get(j).getId() + " ");
+        sb.append(schedule[i].get(j) + " ");
       }
       sb.append("0\n");
     }
