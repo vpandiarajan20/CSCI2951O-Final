@@ -13,7 +13,7 @@ public class Solution {
   static Customer[] customers;
   static ArrayList<Customer> sortedCustomers;
   static double penalty = 0.0;
-  static boolean testing = true; // TODO: Remember to disable
+  static boolean testing = false; // TODO: Remember to disable
 
   // InsertionHeuristic[] insertionHeuristics;
   // RemoveHeuristic removalHeuristic;
@@ -245,7 +245,7 @@ public class Solution {
         Solution.distanceMatrix = distanceMatrix;
         // TODO: fix this damn penalty
         Solution.penalty = Math.max(0.1, Math.min(1000, maxDistance/maxDemand));
-        System.out.println("Max Distance: " + maxDistance + " Max Demand: " + maxDemand + " Total Demand: " + totalDemand + " Total Capacity: " + totalCapacity + " Ratio: " + totalDemand/totalCapacity);
+        // System.out.println("Max Distance: " + maxDistance + " Max Demand: " + maxDemand + " Total Demand: " + totalDemand + " Total Capacity: " + totalCapacity + " Ratio: " + totalDemand/totalCapacity);
   }
   
   public void naiveGenerateInitialSolution() {
@@ -401,7 +401,7 @@ public class Solution {
 
   public String submissionFormat() {
     StringBuilder sb = new StringBuilder();
-    sb.append(Math.round(evalSolution()) + " 0 ");
+    sb.append("0 ");
     for (int i = 0; i < schedule.length; i++) {
       sb.append("0 ");
       for (int j = 0; j < schedule[i].size(); j++) {

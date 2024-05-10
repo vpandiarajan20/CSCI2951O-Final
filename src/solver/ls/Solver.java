@@ -11,7 +11,7 @@ public class Solver {
     float penaltyIncrementFactor; //TODO: incorporate this
     boolean randomRestart; //TODO: incorporate this
     VRPInstance instance;
-    static boolean testing = true; //TODO: Remember to set this to false
+    static boolean testing = false; //TODO: Remember to set this to false
     // InsertionHeuristic[] insertionHeuristics;
     // RemoveHeuristic removalHeuristic;
 
@@ -30,7 +30,7 @@ public class Solver {
     public Solution solve() {
         Solution.initializeFields(instance);
         Solution currSolution = new Solution(instance);
-        System.out.println("Initial solution: " + currSolution);
+        // System.out.println("Initial solution: " + currSolution);
         double currEnergy = currSolution.evalSolution();
         // TODO: explore using different values for the temperature, such as the initial energy
         // t = (float) currEnergy;
@@ -66,9 +66,9 @@ public class Solver {
                 }
             }
             iter++;
-            if (iter % 1000 == 0) {
-                System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
-            }
+            // if (iter % 1000 == 0) {
+            //     System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
+            // }
             t = t * alpha;
         }
         // for (int i = 0; i < bestSolution.schedule.length; i++) {

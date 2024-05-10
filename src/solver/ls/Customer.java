@@ -41,15 +41,15 @@ public class Customer {
   }
 
   public double distanceTo(Customer p) {
-    // return Solution.distanceMatrix[id][p.getId()];
-    return Math.sqrt(Math.pow(x - p.getX(), 2) + Math.pow(y - p.getY(), 2));
+    return Solution.distanceMatrix[id][p.getId()];
+    // return Math.sqrt(Math.pow(x - p.getX(), 2) + Math.pow(y - p.getY(), 2));
   }
   
   public double distanceTo(int p) {
-    // double dist = Solution.distanceMatrix[id][p];
+    double dist = Solution.distanceMatrix[id][p];
     // assert dist == Math.sqrt(Math.pow(x - Solution.customers[p].getX(), 2) + Math.pow(y - Solution.customers[p].getY(), 2));
-    // return dist;
-    return Math.sqrt(Math.pow(x - Solution.customers[p].getX(), 2) + Math.pow(y - Solution.customers[p].getY(), 2));
+    return dist;
+    // return Math.sqrt(Math.pow(x - Solution.customers[p].getX(), 2) + Math.pow(y - Solution.customers[p].getY(), 2));
   }
 
   public double distanceToDepot() {
