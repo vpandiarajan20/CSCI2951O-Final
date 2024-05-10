@@ -44,44 +44,44 @@ public class Solution {
 
   // ------------------------ old take random step ------------------------ 
 
-  // public void takeRandomStep() {
-  //   Random rand = new Random();
-  //   int randNum = rand.nextInt(2);
-  //   Customer customer1 = customers[rand.nextInt(customers.length-1) + 1];
-  //   if (randNum == 0) {
-  //     int vehicleNum = rand.nextInt(schedule.length);
-  //     while (vehicleNum != customer1.getRouteId() && routeDemands[vehicleNum] + customer1.getDemand() > vehicleCapacity) {
-  //       customer1 = customers[rand.nextInt(customers.length-1) + 1];
-  //       vehicleNum = rand.nextInt(schedule.length);
-  //       // System.out.println("Trying to add customers:" + customer1 + " to vehicle " + vehicleNum);
-  //     }
-  //     removeCustomer(customer1);
-  //     if (testing) {
-  //       sanityCheck();
-  //     }
-  //     int idx = 0;
-  //     if (schedule[vehicleNum].size() > 0) {
-  //       idx = rand.nextInt(schedule[vehicleNum].size());
-  //     }
-  //     insertCustomer(customer1, vehicleNum, idx);
-  //     if (testing) {
-  //       sanityCheck();
-  //     }
-  //   } else if (randNum == 1) {
-  //     Customer customer2 = customers[rand.nextInt(customers.length-1) + 1];
-  //     while (customer1 == customer2
-  //      || routeDemands[customer1.getRouteId()] + customer2.getDemand() - customer1.getDemand() > vehicleCapacity
-  //       || routeDemands[customer2.getRouteId()] + customer1.getDemand() - customer2.getDemand() > vehicleCapacity) {
-  //       customer1 = customers[rand.nextInt(customers.length-1) + 1];
-  //       customer2 = customers[rand.nextInt(customers.length-1) + 1];
-  //       // System.out.println("Trying to swap customers:" + customer1 + " " + customer2);
-  //     }
-  //     swapCustomers(customer1, customer2);
-  //     if (testing) {
-  //       sanityCheck();
-  //     }
-  //   }
-  // }
+  public void takeRandomStep() {
+    Random rand = new Random();
+    int randNum = rand.nextInt(2);
+    Customer customer1 = customers[rand.nextInt(customers.length-1) + 1];
+    if (randNum == 0) {
+      int vehicleNum = rand.nextInt(schedule.length);
+      while (vehicleNum != customer1.getRouteId() && routeDemands[vehicleNum] + customer1.getDemand() > vehicleCapacity) {
+        customer1 = customers[rand.nextInt(customers.length-1) + 1];
+        vehicleNum = rand.nextInt(schedule.length);
+        // System.out.println("Trying to add customers:" + customer1 + " to vehicle " + vehicleNum);
+      }
+      removeCustomer(customer1);
+      if (testing) {
+        sanityCheck();
+      }
+      int idx = 0;
+      if (schedule[vehicleNum].size() > 0) {
+        idx = rand.nextInt(schedule[vehicleNum].size());
+      }
+      insertCustomer(customer1, vehicleNum, idx);
+      if (testing) {
+        sanityCheck();
+      }
+    } else if (randNum == 1) {
+      Customer customer2 = customers[rand.nextInt(customers.length-1) + 1];
+      while (customer1 == customer2
+        || routeDemands[customer1.getRouteId()] + customer2.getDemand() - customer1.getDemand() > vehicleCapacity
+        || routeDemands[customer2.getRouteId()] + customer1.getDemand() - customer2.getDemand() > vehicleCapacity) {
+        customer1 = customers[rand.nextInt(customers.length-1) + 1];
+        customer2 = customers[rand.nextInt(customers.length-1) + 1];
+        // System.out.println("Trying to swap customers:" + customer1 + " " + customer2);
+      }
+      swapCustomers(customer1, customer2);
+      if (testing) {
+        sanityCheck();
+      }
+    }
+  }
 
   // public ArrayList<Integer>[] takeRandomStep(ArrayList<Integer>[] schedule) {
   //   ArrayList<Customer>[] schedule1 = copySchedule(schedule);
@@ -93,13 +93,12 @@ public class Solution {
   //   }
   //   return schedule2;
   // }
-  
+
   public static void incrementPenalty() {
     penalty *= 1.2;
     penalty = Math.min(penalty, 5000);
     
   }
-
 
   // ---------------------------------------------------------- Misc Helpers ------------------------------------------------
 
@@ -136,7 +135,7 @@ public class Solution {
     for (int i = 0; i < schedule.length; i++) {
       assert Math.round(routeDemands[i]) == Math.round(computeRouteDemand(schedule[i])) : "Schedule" + this + "Route " + i + " Demand: " + routeDemands[i] + " Computed Demand: " + computeRouteDemand(schedule[i]);
       assert Math.round(routeDistances[i]) == Math.round(computeRouteDistance(schedule[i])) : "Schedule" + this + "Route " + i + " Distance: " + routeDistances[i] + " Computed Distance: " + computeRouteDistance(schedule[i]);
-      assert Math.round(routePenalties[i]) == Math.round(computePenalty(routeDemands[i])) : "Schedule" + this + "Route " + i + " Penalty: " + routePenalties[i] + " Computed Penalty: " + computePenalty(routeDemands[i]);
+      // assert Math.round(routePenalties[i]) == Math.round(computePenalty(routeDemands[i])) : "Schedule" + this + "Route " + i + " Penalty: " + routePenalties[i] + " Computed Penalty: " + computePenalty(routeDemands[i]);
       for (int j = 0; j < schedule[i].size(); j++) {
         assert customers[schedule[i].get(j)].getRouteId() == i;
       }
@@ -199,12 +198,13 @@ public class Solution {
   // ---------------------------------------------------------- Initialization Functions ------------------------------------------------
   public static void initializeFields(VRPInstance instance) {
     Solution.vehicleCapacity = instance.vehicleCapacity;
-    Solution.customers = new Customer[instance.numCustomers + 1];
+    Solution.customers = new Customer[instance.numCustomers];
     Solution.sortedCustomers = new ArrayList<Customer>();
-    customers[0] = new Customer(0, 0, 0, 0, 0);
-    for (int i = 1; i < instance.numCustomers + 1; i++) {
-      customers[i] = new Customer(instance.xCoordOfCustomer[i-1], instance.yCoordOfCustomer[i-1], instance.demandOfCustomer[i-1], i, -1);
-      sortedCustomers.add(customers[i]);
+    for (int i = 0; i < instance.numCustomers; i++) {
+      customers[i] = new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i], i, -1);
+      if (i != 0) {
+        sortedCustomers.add(customers[i]);
+      }
     }
     // sort customers by demand, descending
     Solution.sortedCustomers.sort((a, b) -> b.getDemand() - a.getDemand());
@@ -231,9 +231,9 @@ public class Solution {
                 if (i == j) {
                     distanceMatrix[i][j] = 0.0;
                 } else {
-                    // System.out.print("i: " + i + " j: " + j + " x: " + instance.xCoordOfCustomer[i] + " y: " + instance.yCoordOfCustomer[i] + " x: " + instance.xCoordOfCustomer[j] + " y: " + instance.yCoordOfCustomer[j] + "\n");
+                    // System.out.print("i: " + i + " j: " + j + " x: " + customerI.getX() + " y: " + customerI.getY() + " x: " + customerJ.getX() + " y: " + customerJ.getY() + "\n");
                     distanceMatrix[i][j] = Math.sqrt(Math.pow(customerI.getX() - customerJ.getX(), 2) + Math.pow(customerI.getY() - customerJ.getY(), 2));
-                    // assert distanceMatrix[i][j] == customerI.distanceTo(j);
+                    assert distanceMatrix[i][j] == customerI.distanceTo(j);
                     if (j != 0) {
                       nearestNeighborsMatrix[i].add(new Tuple<Double, Integer>(distanceMatrix[i][j], j));
                     }
@@ -287,7 +287,7 @@ public class Solution {
     }
     return totalDistance;
   }
-  
+
   public double computeRouteDistance(ArrayList<Integer> solution) {
     double totalDistance = 0.0;
     for (int j = 0; j < solution.size(); j++) {

@@ -55,7 +55,7 @@ public class Solver {
             if (currEnergy < bestEnergy) {
                 bestEnergy = currEnergy;
                 bestSolution = currSolution.clone();
-                System.out.println("New best solution found: " + bestSolution);
+                // System.out.println("New best solution found: " + bestSolution);
                 noImprovIter = 0;
             } else {
                 noImprovIter++;
@@ -66,7 +66,9 @@ public class Solver {
                 }
             }
             iter++;
-            // System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
+            if (iter % 1000 == 0) {
+                System.out.println("Iteration: " + iter + " Temperature: " + t + " Energy: " + currEnergy + " Best Energy: " + bestEnergy);
+            }
             t = t * alpha;
         }
         // for (int i = 0; i < bestSolution.schedule.length; i++) {
