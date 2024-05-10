@@ -45,14 +45,12 @@ public class Solution {
   // ---------------------------------------------------------- Iterative Functions ------------------------------------------------
 
 
-
-
   public void takeRandomStep() {
     boolean searchCompleted = false;
     Random rand = new Random();
-    int numNodesToSearch = Math.min(6, customers.length-1);
-    int numNeighborsToSearch = Math.min(10, nearestNeighborsMatrix[1].size());
-    
+    boolean intraRouteMove = false;
+    int numNodesToSearch = Math.min(8, customers.length-1);
+    int numNeighborsToSearch = Math.min(15, nearestNeighborsMatrix[1].size());
 
     while (!searchCompleted) {
       searchCompleted = true;
@@ -67,27 +65,89 @@ public class Solution {
           }
           Customer customer2 = customers[customer2ID];
           assert customer2.getId() == customer2ID;
-          
+          intraRouteMove = customer1.getRouteId() == customer2.getRouteId();
+          // System.out.println("Customer 1: " + customer1 + " Customer 2: " + customer2);
+          // debug move2
           // System.out.println("Attempting Moves");
-          if (move1(customer1, customer2)) {
+          if (move1(customer1, customer2) || (testing && sanityCheck() && !testing)) {
             if (testing) {
+              assert customer1.getRouteId() == customer2.getRouteId();
+              assert schedule[customer1.getRouteId()].contains(customer1.getId());
+              assert schedule[customer1.getRouteId()].contains(customer2.getId());
               sanityCheck();
             }
             searchCompleted = false;
             continue;
-          } else if (move2(customer1, customer2)) {
+          // } else if (move2(customer1, customer2) || (testing && sanityCheck() && !testing)) {
+          //   if (testing) {
+          //     assert customer1.getRouteId() == customer2.getRouteId();
+          //     assert schedule[customer1.getRouteId()].contains(customer1.getId());
+          //     assert schedule[customer1.getRouteId()].contains(customer2.getId());
+          //     sanityCheck();
+          //   }
+          //   searchCompleted = false;
+          //   continue;
+          } else if (move3(customer1, customer2) || (testing && sanityCheck() && !testing)) {
             if (testing) {
+              assert customer1.getRouteId() == customer2.getRouteId();
+              assert schedule[customer1.getRouteId()].contains(customer2.getId());
+              sanityCheck();
+            }
+            searchCompleted = false;
+            continue;
+          } else if (move4(customer1, customer2) || (testing && sanityCheck() && !testing)) {
+            if (testing) {
+              // assert customer1.getRouteId() == customer2.getRouteId();
+              // assert schedule[customer1.getRouteId()].contains(customer1.getId());
+              // assert schedule[customer1.getRouteId()].contains(customer2.getId());
+              sanityCheck();
+            }
+            searchCompleted = false;
+            continue;
+          } else if (move5(customer1, customer2) || (testing && sanityCheck() && !testing)) {
+            if (testing) {
+              // assert customer1.getRouteId() == customer2.getRouteId();
+              // assert schedule[customer1.getRouteId()].contains(customer1.getId());
+              // assert schedule[customer1.getRouteId()].contains(customer2.getId());
+              sanityCheck();
+            }
+            searchCompleted = false;
+            continue;
+          } else if (move6(customer1, customer2) || (testing && sanityCheck() && !testing)) {
+            if (testing) {
+              // assert customer1.getRouteId() == customer2.getRouteId();
+              // assert schedule[customer1.getRouteId()].contains(customer1.getId());
+              // assert schedule[customer2.getRouteId()].contains(customer2.getId());
+              sanityCheck();
+            }
+            searchCompleted = false;
+            continue;
+          } else if (move78(customer1, customer2) || (testing && sanityCheck() && !testing)) {
+            if (testing) {
+              assert customer1.getRouteId() == customer2.getRouteId();
+              assert schedule[customer1.getRouteId()].contains(customer1.getId());
+              assert schedule[customer2.getRouteId()].contains(customer2.getId());
+              sanityCheck();
+            }
+            searchCompleted = false;
+            continue;
+          } else if (!intraRouteMove && move9(customer1, customer2) || (testing && sanityCheck() && !testing)) {
+            if (testing) {
+              // assert customer1.getRouteId() == customer2.getRouteId();
+              assert schedule[customer1.getRouteId()].contains(customer1.getId());
+              assert schedule[customer2.getRouteId()].contains(customer2.getId());
               sanityCheck();
             }
             searchCompleted = false;
             continue;
           }
+          
           ArrayList<Integer> route = schedule[customer2.getRouteId()];
           int customer2Index = route.indexOf(customer2ID);         
           if (customer2Index == 0) {
             if (move1b(customer1, customer2)) {
-              System.out.println("Move 1b: " + customer1 + " " + customer2);
-              System.out.println(this);
+              // System.out.println("Move 1b: " + customer1 + " " + customer2);
+              // System.out.println(this);
               if (testing) {
                 sanityCheck();
               }
@@ -111,6 +171,9 @@ public class Solution {
       }
     }
   }
+
+
+  // ---------------------------------------------------------- Move Functions ------------------------------------------------
 
   @SuppressWarnings("unchecked")
   public boolean move1(Customer customer1, Customer customer2) {
@@ -157,66 +220,6 @@ public class Solution {
           routeDemands[customer2.getRouteId()] += customer1.getDemand();
           routePenalties[customer1.getRouteId()] = computePenalty(routeDemands[customer1.getRouteId()]);
           routePenalties[customer2.getRouteId()] = computePenalty(routeDemands[customer2.getRouteId()]);
-          customer1.setRouteId(customer2.getRouteId());
-          return true;
-        }
-      }
-      return false;
-    }
-  }
-
-  public boolean move2(Customer customer1, Customer customer2) {
-    ArrayList<Integer> route1 = schedule[customer1.getRouteId()];
-    ArrayList<Integer> route2 = schedule[customer2.getRouteId()];
-
-    int customer1Index = route1.indexOf(customer1.getId());
-    assert customer1Index != -1;
-    int customer2Index = route2.indexOf(customer2.getId());
-    assert customer1Index != -1;
-
-    // System.out.println("Customer 1: " + customer1 + " Customer 2: " + customer2 + " Route 1: " + route1 + " Route 2: " + route2 + " Customer 1 Index: " + customer1Index + " Customer 2 Index: " + customer2Index);
-    int[] customer1NeighborIDs = getPreviousAndNextCustomer(customer1.getRouteId(), customer1Index);
-    int[] customer2NeighborIDs = getPreviousAndNextCustomer(customer2.getRouteId(), customer2Index);
-
-    if (customer2NeighborIDs[1] == customer1.getId() || customer2.getId() == customer1NeighborIDs[1] || customer1NeighborIDs[1] == 0) {
-      return false;
-    }
-
-
-    int[] customer3NeighborIDs = getPreviousAndNextCustomer(customer1.getRouteId(), customer1Index + 1);
-    assert customer3NeighborIDs[0] == customer1.getId();
-    Customer customer3 = customers[customer1NeighborIDs[1]];
-
-    double removeC1C3Delta = distanceMatrix[customer1NeighborIDs[0]][customer3NeighborIDs[1]] - distanceMatrix[customer1.getId()][customer1NeighborIDs[0]] - distanceMatrix[customer1NeighborIDs[1]][customer3NeighborIDs[1]];
-    double addC1C3Delta = distanceMatrix[customer1.getId()][customer2.getId()] + distanceMatrix[customer1NeighborIDs[1]][customer2NeighborIDs[1]] - distanceMatrix[customer2.getId()][customer2NeighborIDs[1]];
-    if (customer1.getRouteId() == customer2.getRouteId()) {
-      if (addC1C3Delta + removeC1C3Delta < 0.01f) {
-        route1.remove(customer1Index); // remove customer1
-        route1.remove(customer1Index); // remove customer3
-        customer2Index = route2.indexOf(customer2.getId());
-        route1.add(customer2Index + 1, customer1.getId());
-        route2.add(customer2Index + 2, customer1NeighborIDs[1]);
-        routeDistances[customer1.getRouteId()] += addC1C3Delta + removeC1C3Delta;
-        assert Math.abs(routeDistances[customer1.getRouteId()] - computeRouteDistance(route1)) < 0.01f;
-        return true;
-      }
-      return false;
-    } else {
-      if (removeC1C3Delta + addC1C3Delta < routePenalties[customer1.getRouteId()] + routePenalties[customer2.getRouteId()]) {
-        double removeC1C3Penalties = computePenalty(routeDemands[customer1.getRouteId()] - customer1.getDemand() - customer3.getDemand()) - routePenalties[customer1.getRouteId()];
-        double addC1C3Penalties = computePenalty(routeDemands[customer2.getRouteId()] + customer1.getDemand() + customer3.getDemand()) - routePenalties[customer2.getRouteId()];
-        if (addC1C3Delta + removeC1C3Delta + removeC1C3Penalties + addC1C3Penalties < 0) {
-          route1.remove(customer1Index);
-          route1.remove(customer1Index);
-          route2.add(customer2Index + 1, customer1.getId());
-          route2.add(customer2Index + 2, customer1NeighborIDs[1]);
-          routeDistances[customer1.getRouteId()] += removeC1C3Delta - distanceMatrix[customer1.getId()][customer1NeighborIDs[1]];
-          routeDistances[customer2.getRouteId()] += addC1C3Delta + distanceMatrix[customer1.getId()][customer1NeighborIDs[1]];
-          routeDemands[customer1.getRouteId()] -= customer1.getDemand() - customer3.getDemand();
-          routeDemands[customer2.getRouteId()] += customer1.getDemand() + customer3.getDemand();
-          routePenalties[customer1.getRouteId()] = computePenalty(routeDemands[customer1.getRouteId()]);
-          routePenalties[customer2.getRouteId()] = computePenalty(routeDemands[customer2.getRouteId()]);
-          customer1.setRouteId(customer2.getRouteId());
           customer1.setRouteId(customer2.getRouteId());
           return true;
         }
@@ -294,6 +297,216 @@ public class Solution {
     return false;
   }
 
+  public boolean move2(Customer customer1, Customer customer2) {
+    ArrayList<Integer> route1 = schedule[customer1.getRouteId()];
+    ArrayList<Integer> route2 = schedule[customer2.getRouteId()];
+
+    int customer1Index = route1.indexOf(customer1.getId());
+    assert customer1Index != -1;
+    int customer2Index = route2.indexOf(customer2.getId());
+    assert customer1Index != -1;
+
+    // System.out.println("Customer 1: " + customer1 + " Customer 2: " + customer2 + " Route 1: " + route1 + " Route 2: " + route2 + " Customer 1 Index: " + customer1Index + " Customer 2 Index: " + customer2Index);
+    int[] customer1NeighborIDs = getPreviousAndNextCustomer(customer1.getRouteId(), customer1Index);
+    int[] customer2NeighborIDs = getPreviousAndNextCustomer(customer2.getRouteId(), customer2Index);
+
+    if (customer2NeighborIDs[1] == customer1.getId() || customer2.getId() == customer1NeighborIDs[1] || customer1NeighborIDs[1] == 0) {
+      return false;
+    }
+
+
+    int[] customer3NeighborIDs = getPreviousAndNextCustomer(customer1.getRouteId(), customer1Index + 1);
+    assert customer3NeighborIDs[0] == customer1.getId();
+    Customer customer3 = customers[customer1NeighborIDs[1]];
+
+    double removeC1C3Delta = distanceMatrix[customer1NeighborIDs[0]][customer3NeighborIDs[1]] - distanceMatrix[customer1.getId()][customer1NeighborIDs[0]] - distanceMatrix[customer1NeighborIDs[1]][customer3NeighborIDs[1]];
+    double addC1C3Delta = distanceMatrix[customer1.getId()][customer2.getId()] + distanceMatrix[customer1NeighborIDs[1]][customer2NeighborIDs[1]] - distanceMatrix[customer2.getId()][customer2NeighborIDs[1]];
+    if (customer1.getRouteId() == customer2.getRouteId()) {
+      if (addC1C3Delta + removeC1C3Delta < 0.01f) {
+        route1.remove(customer1Index); // remove customer1
+        route1.remove(customer1Index); // remove customer3
+        customer2Index = route2.indexOf(customer2.getId());
+        route2.add(customer2Index + 1, customer1.getId());
+        route2.add(customer2Index + 2, customer1NeighborIDs[1]);
+        assert route2.indexOf(customer3.getId()) != -1;
+        assert route2.indexOf(customer1.getId()) != -1;
+        assert route2.indexOf(customer3.getId()) - 1 == route2.indexOf(customer1.getId());
+        routeDistances[customer1.getRouteId()] += addC1C3Delta + removeC1C3Delta;
+        assert Math.abs(routeDistances[customer1.getRouteId()] - computeRouteDistance(route1)) < 0.01f;
+        return true;
+      }
+      return false;
+    } else {
+      if (removeC1C3Delta + addC1C3Delta < routePenalties[customer1.getRouteId()] + routePenalties[customer2.getRouteId()]) {
+        double removeC1C3Penalties = computePenalty(routeDemands[customer1.getRouteId()] - customer1.getDemand() - customer3.getDemand()) - routePenalties[customer1.getRouteId()];
+        double addC1C3Penalties = computePenalty(routeDemands[customer2.getRouteId()] + customer1.getDemand() + customer3.getDemand()) - routePenalties[customer2.getRouteId()];
+        if (addC1C3Delta + removeC1C3Delta + removeC1C3Penalties + addC1C3Penalties < 0) {
+          route1.remove(customer1Index);
+          route1.remove(customer1Index);
+          route2.add(customer2Index + 1, customer1.getId());
+          route2.add(customer2Index + 2, customer1NeighborIDs[1]);
+          assert route2.indexOf(customer3.getId()) != -1;
+          assert route2.indexOf(customer1.getId()) != -1;
+          assert route2.indexOf(customer3.getId()) - 1 == route2.indexOf(customer1.getId());
+          routeDistances[customer1.getRouteId()] += removeC1C3Delta - distanceMatrix[customer1.getId()][customer1NeighborIDs[1]];
+          routeDistances[customer2.getRouteId()] += addC1C3Delta + distanceMatrix[customer1.getId()][customer1NeighborIDs[1]];
+          assert Math.abs(routeDistances[customer1.getRouteId()] - computeRouteDistance(route1)) < 0.01f;
+          assert Math.abs(routeDistances[customer2.getRouteId()] - computeRouteDistance(route2)) < 0.01f;
+          routeDemands[customer1.getRouteId()] -= customer1.getDemand() - customer3.getDemand();
+          routeDemands[customer2.getRouteId()] += customer1.getDemand() + customer3.getDemand();
+          routePenalties[customer1.getRouteId()] = computePenalty(routeDemands[customer1.getRouteId()]);
+          routePenalties[customer2.getRouteId()] = computePenalty(routeDemands[customer2.getRouteId()]);
+          customer1.setRouteId(customer2.getRouteId());
+          customer3.setRouteId(customer2.getRouteId());
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  public boolean move3(Customer customer1, Customer customer2) {
+    // remove customer1 from route1, add (customer1 & customer after customer1) after customer2
+    ArrayList<Integer> route1 = schedule[customer1.getRouteId()];
+    ArrayList<Integer> route2 = schedule[customer2.getRouteId()];
+
+    int customer1Index = route1.indexOf(customer1.getId());
+    assert customer1Index != -1;
+    int customer2Index = route2.indexOf(customer2.getId());
+    assert customer1Index != -1;
+
+    // System.out.println("Customer 1: " + customer1 + " Customer 2: " + customer2 + " Route 1: " + route1 + " Route 2: " + route2 + " Customer 1 Index: " + customer1Index + " Customer 2 Index: " + customer2Index);
+    int[] customer1NeighborIDs = getPreviousAndNextCustomer(customer1.getRouteId(), customer1Index);
+    int[] customer2NeighborIDs = getPreviousAndNextCustomer(customer2.getRouteId(), customer2Index);
+
+    if (customer1.getId() == customer2NeighborIDs[1] || customer2.getId() == customer1NeighborIDs[1] || customer1NeighborIDs[1] == 0) {
+      return false;
+    }
+
+
+    int[] customer3NeighborIDs = getPreviousAndNextCustomer(customer1.getRouteId(), customer1Index + 1);
+    assert customer3NeighborIDs[0] == customer1.getId();
+    Customer customer3 = customers[customer1NeighborIDs[1]];
+
+    double removeC1C3Delta = distanceMatrix[customer1NeighborIDs[0]][customer3NeighborIDs[1]] - distanceMatrix[customer1.getId()][customer1NeighborIDs[0]] - distanceMatrix[customer1.getId()][customer3.getId()] - distanceMatrix[customer3.getId()][customer3NeighborIDs[1]];
+    double addC1C3Delta = distanceMatrix[customer2.getId()][customer3.getId()] + distanceMatrix[customer3.getId()][customer1.getId()] + distanceMatrix[customer1.getId()][customer2NeighborIDs[1]] - distanceMatrix[customer2.getId()][customer2NeighborIDs[1]];
+    if (customer1.getRouteId() == customer2.getRouteId()) {
+      if (addC1C3Delta + removeC1C3Delta < 0.01f) {
+        route1.remove(customer1Index); // remove customer1
+        route1.remove(customer1Index); // remove customer3
+        customer2Index = route2.indexOf(customer2.getId());
+        route2.add(customer2Index + 1, customer3.getId());
+        route2.add(customer2Index + 2, customer1.getId());
+        assert route2.indexOf(customer3.getId()) != -1;
+        assert route2.indexOf(customer1.getId()) != -1;
+        assert route2.indexOf(customer3.getId()) + 1 == route2.indexOf(customer1.getId());
+        routeDistances[customer1.getRouteId()] += addC1C3Delta + removeC1C3Delta;
+        assert routeDemands[customer1.getRouteId()] == computeRouteDemand(route1);
+        assert Math.abs(routeDistances[customer1.getRouteId()] - computeRouteDistance(route1)) < 0.01f;
+        return true;
+      }
+      return false;
+    } else {
+      if (removeC1C3Delta + addC1C3Delta < routePenalties[customer1.getRouteId()] + routePenalties[customer2.getRouteId()]) {
+        double removeC1C3Penalties = computePenalty(routeDemands[customer1.getRouteId()] - customer1.getDemand() - customer3.getDemand()) - routePenalties[customer1.getRouteId()];
+        double addC1C3Penalties = computePenalty(routeDemands[customer2.getRouteId()] + customer1.getDemand() + customer3.getDemand()) - routePenalties[customer2.getRouteId()];
+        if (addC1C3Delta + removeC1C3Delta + removeC1C3Penalties + addC1C3Penalties < 0) {
+          route1.remove(customer1Index);
+          route1.remove(customer1Index);
+          route2.add(customer2Index + 1, customer3.getId());
+          route2.add(customer2Index + 2, customer1.getId());
+          assert route2.indexOf(customer3.getId()) != -1;
+          assert route2.indexOf(customer1.getId()) != -1;
+          assert route2.indexOf(customer3.getId()) + 1 == route2.indexOf(customer1.getId());
+          routeDistances[customer1.getRouteId()] += removeC1C3Delta;
+          routeDistances[customer2.getRouteId()] += addC1C3Delta;
+          routeDemands[customer1.getRouteId()] -= customer1.getDemand() + customer3.getDemand();
+          routeDemands[customer2.getRouteId()] += customer1.getDemand() + customer3.getDemand();
+          assert routeDemands[customer1.getRouteId()] == computeRouteDemand(route1);
+          assert routeDemands[customer2.getRouteId()] == computeRouteDemand(route2);
+          routePenalties[customer1.getRouteId()] = computePenalty(routeDemands[customer1.getRouteId()]);
+          routePenalties[customer2.getRouteId()] = computePenalty(routeDemands[customer2.getRouteId()]);
+          customer1.setRouteId(customer2.getRouteId());
+          customer3.setRouteId(customer2.getRouteId());
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  public boolean move4(Customer customer1, Customer customer2) {
+    // swap customer1 & customer2
+    ArrayList<Integer> route1 = schedule[customer1.getRouteId()];
+    ArrayList<Integer> route2 = schedule[customer2.getRouteId()];
+    
+    int customer1Index = route1.indexOf(customer1.getId());
+    assert customer1Index != -1;
+    int customer2Index = route2.indexOf(customer2.getId());
+    assert customer1Index != -1;
+
+    int[] customer2NeighborIDs = getPreviousAndNextCustomer(customer2.getRouteId(), customer2Index);
+
+    if (customer1.getId() == customer2NeighborIDs[0] || customer1.getId() == customer2NeighborIDs[1]) {
+      return false;
+    }
+
+    double beforeCost = routeDistances[customer1.getRouteId()] + routeDistances[customer2.getRouteId()]  + routePenalties[customer1.getRouteId()] + routePenalties[customer2.getRouteId()];
+    swapCustomers(customer1, customer2);
+    double afterCost = routeDistances[customer1.getRouteId()] + routeDistances[customer2.getRouteId()]  + routePenalties[customer1.getRouteId()] + routePenalties[customer2.getRouteId()];
+    if (beforeCost > afterCost) {
+      return true;
+    }
+    swapCustomers(customer1, customer2);
+    return false;
+  }
+
+  public boolean move5(Customer customer1, Customer customer2) {
+    // if U X -- V -> V -- U X
+    ArrayList<Integer> route1 = schedule[customer1.getRouteId()];
+    ArrayList<Integer> route2 = schedule[customer2.getRouteId()];
+    
+    int customer1Index = route1.indexOf(customer1.getId());
+    assert customer1Index != -1;
+    int customer2Index = route2.indexOf(customer2.getId());
+    assert customer1Index != -1;
+
+    int[] customer1NeighborIDs = getPreviousAndNextCustomer(customer1.getRouteId(), customer1Index);
+    int[] customer2NeighborIDs = getPreviousAndNextCustomer(customer2.getRouteId(), customer2Index);
+
+    Customer customer3 = customers[customer1NeighborIDs[1]];
+
+    if (customer1.getId() == customer2NeighborIDs[0] || customer3.getId() == customer2NeighborIDs[0] || customer1.getId() == customer2NeighborIDs[1] || customer3.getId() == 0) {
+      return false;
+    }
+
+    double beforeCost = routeDistances[customer1.getRouteId()] + routeDistances[customer2.getRouteId()]  + routePenalties[customer1.getRouteId()] + routePenalties[customer2.getRouteId()];
+    swapCustomers(customer1, customer2);
+    removeCustomer(customer3);
+    customer1Index = route2.indexOf(customer1.getId());
+    insertCustomer(customer3, customer1.getRouteId(), customer1Index+1);
+    assert route2.indexOf(customer3.getId()) != -1;
+    assert route2.indexOf(customer3.getId()) - 1 == route2.indexOf(customer1.getId());
+    double afterCost = routeDistances[customer1.getRouteId()] + routeDistances[customer2.getRouteId()]  + routePenalties[customer1.getRouteId()] + routePenalties[customer2.getRouteId()];
+    if (beforeCost > afterCost) {
+      return true;
+    }
+    swapCustomers(customer1, customer2);
+    removeCustomer(customer3);
+    customer1Index = route1.indexOf(customer1.getId());
+    insertCustomer(customer3, customer1.getRouteId(), customer1Index+1);
+    assert route1.indexOf(customer3.getId()) != -1;
+    assert route1.indexOf(customer3.getId()) - 1 == route1.indexOf(customer1.getId());
+    return false;
+  }
+
+
+
+
+
+
+  // ------------------------ old take random step ------------------------ 
+
   // public void takeRandomStep() {
   //   Random rand = new Random();
   //   int randNum = rand.nextInt(2);
@@ -344,10 +557,143 @@ public class Solution {
   //   return schedule2;
   // }
 
+  //
 
+  public boolean move6(Customer customerU, Customer customerV) { 
+    // if U X -- V Y -> V Y -- U X -- they do something checking if 
+    int routeIDU = customerU.getRouteId();
+    int routeIDV = customerV.getRouteId();
+    
+    ArrayList<Integer> routeU = schedule[routeIDU];
+    ArrayList<Integer> routeV = schedule[routeIDV];
+    // assert routeU == routeV; -- this is only move 7
+
+    int customerUIndex = routeU.indexOf(customerU.getId());
+    assert customerUIndex != -1;
+    int customerVIndex = routeV.indexOf(customerV.getId());
+    assert customerVIndex != -1;
+
+    // System.out.println("Customer 1: " + customer1 + " Customer 2: " + customer2 + " Route 1: " + route1 + " Route 2: " + route2 + " Customer 1 Index: " + customer1Index + " Customer 2 Index: " + customer2Index);
+    int[] customerUNeighborIDs = getPreviousAndNextCustomer(routeIDU, customerUIndex);
+    int[] customerVNeighborIDs = getPreviousAndNextCustomer(routeIDV, customerVIndex);
+
+    // if X is V then switch does nothing or both have nothing or either U or X is at end
+    if (customerUNeighborIDs[1] == 0 || customerVNeighborIDs[1] == 0) {
+      return false;
+    }
+    // if route is the same for both, then V == U does nothing 
+    if (routeIDU == routeIDV && customerU.getId() == customerV.getId()) {
+      return false;
+    }
+
+    Customer customerX = customers[customerUNeighborIDs[1]];
+    Customer customerY = customers[customerVNeighborIDs[1]];
+
+    // if routes are the same it just doubles the cost
+    double costBefore = routeDistances[routeIDU]+ routePenalties[routeIDU] + routeDistances[routeIDV]+ routePenalties[routeIDV];
+    swapCustomers(customerU, customerV);
+    swapCustomers(customerX, customerY);
+    double costAfter = routeDistances[routeIDU]+ routePenalties[routeIDU] + routeDistances[routeIDV]+ routePenalties[routeIDV];
+
+    if (costBefore > costAfter) {
+      return true;
+    }
+    swapCustomers(customerU, customerV);
+    swapCustomers(customerX, customerY);
+    return false;
+  }
+
+  public boolean move78(Customer customerU, Customer customerV) { 
+    // if U X -- V Y -> U V -- X Y
+    // works for both if on same route or on different routes
+    int routeIDU = customerU.getRouteId();
+    int routeIDV = customerV.getRouteId();
+    
+    ArrayList<Integer> routeU = schedule[routeIDU];
+    ArrayList<Integer> routeV = schedule[routeIDV];
+    // assert routeU == routeV; -- this is only move 7
+
+    int customerUIndex = routeU.indexOf(customerU.getId());
+    assert customerUIndex != -1;
+    int customerVIndex = routeV.indexOf(customerV.getId());
+    assert customerVIndex != -1;
+
+    // System.out.println("Customer 1: " + customer1 + " Customer 2: " + customer2 + " Route 1: " + route1 + " Route 2: " + route2 + " Customer 1 Index: " + customer1Index + " Customer 2 Index: " + customer2Index);
+    int[] customerUNeighborIDs = getPreviousAndNextCustomer(routeIDU, customerUIndex);
+    int[] customerVNeighborIDs = getPreviousAndNextCustomer(routeIDV, customerVIndex);
+
+    // if X is V then switch does nothing or both have nothing or either U or X is at end 
+    if (customerUNeighborIDs[1] == 0 || customerVNeighborIDs[1] == 0) {
+      return false;
+    }
+    // if route is the same for both, then V == X does nothing 
+    if (routeIDU == routeIDV && customerUNeighborIDs[1] == customerV.getId()) {
+      return false;
+    }
+    
+    Customer customerX = customers[customerUNeighborIDs[1]];
+
+    // if routes are the same it just doubles the cost
+    double costBefore = routeDistances[routeIDU]+ routePenalties[routeIDU] + routeDistances[routeIDV]+ routePenalties[routeIDV];
+    swapCustomers(customerV, customerX);
+    double costAfter = routeDistances[routeIDU]+ routePenalties[routeIDU] + routeDistances[routeIDV]+ routePenalties[routeIDV];
+
+    if (costBefore > costAfter) {
+      return true;
+    }
+    swapCustomers(customerX, customerV);
+    return false;
+  }
+  
+  public boolean move9(Customer customerU, Customer customerV) { 
+    // if U X -- V Y -> U Y -- V X
+    // works for both if on same route or on different routes
+    int routeIDU = customerU.getRouteId();
+    int routeIDV = customerV.getRouteId();
+    
+    ArrayList<Integer> routeU = schedule[routeIDU];
+    ArrayList<Integer> routeV = schedule[routeIDV];
+    assert routeIDU != routeIDV;
+
+    int customerUIndex = routeU.indexOf(customerU.getId());
+    assert customerUIndex != -1;
+    int customerVIndex = routeV.indexOf(customerV.getId());
+    assert customerVIndex != -1;
+
+    // System.out.println("Customer 1: " + customer1 + " Customer 2: " + customer2 + " Route 1: " + route1 + " Route 2: " + route2 + " Customer 1 Index: " + customer1Index + " Customer 2 Index: " + customer2Index);
+    int[] customerUNeighborIDs = getPreviousAndNextCustomer(routeIDU, customerUIndex);
+    int[] customerVNeighborIDs = getPreviousAndNextCustomer(routeIDV, customerVIndex);
+
+    // either U or V is at end then this cant work
+    if (customerUNeighborIDs[1] == 0 || customerVNeighborIDs[1] == 0) {
+      return false;
+    }
+    Customer customerX = customers[customerUNeighborIDs[1]];
+    Customer customerY = customers[customerVNeighborIDs[1]];
+
+    double costPrune = distanceMatrix[customerU.getId()][customerY.getId()] + distanceMatrix[customerV.getId()][customerX.getId()] - distanceMatrix[customerU.getId()][customerX.getId()] - distanceMatrix[customerV.getId()][customerY.getId()]
+		        - routePenalties[routeIDU] - routePenalties[routeIDV]; // pruning but way more jank bc after hella shit
+
+    if (costPrune >= 0) {
+      return false;
+    }
+    
+    double costBefore = routeDistances[routeIDU]+ routePenalties[routeIDU] + routeDistances[routeIDV]+ routePenalties[routeIDV];
+    swapCustomers(customerX, customerY);
+    double costAfter = routeDistances[routeIDU]+ routePenalties[routeIDU] + routeDistances[routeIDV]+ routePenalties[routeIDV];
+
+    if (costBefore > costAfter) {
+      return true;
+    }
+    swapCustomers(customerY, customerX);
+    return false;
+  }
+
+  
   public static void incrementPenalty() {
     penalty *= 1.2;
     penalty = Math.min(penalty, 5000);
+    
   }
 
 
@@ -375,10 +721,6 @@ public class Solution {
     return prevAndNext;
   }
 
-  public double computePenalty(double demand) {
-    return Math.max(0.0, demand - vehicleCapacity) * penalty;
-  }
-
   public static double acceptanceProbability(double energyCurrent, double energyNew, double temperature) {
     if (energyNew < energyCurrent) {
       return 1.0;
@@ -386,16 +728,21 @@ public class Solution {
     return Math.exp((energyCurrent - energyNew) / temperature);
   }
 
-  public void sanityCheck() {
+  public boolean sanityCheck() {
     for (int i = 0; i < schedule.length; i++) {
       assert Math.round(routeDemands[i]) == Math.round(computeRouteDemand(schedule[i])) : "Schedule" + this + "Route " + i + " Demand: " + routeDemands[i] + " Computed Demand: " + computeRouteDemand(schedule[i]);
       assert Math.round(routeDistances[i]) == Math.round(computeRouteDistance(schedule[i])) : "Schedule" + this + "Route " + i + " Distance: " + routeDistances[i] + " Computed Distance: " + computeRouteDistance(schedule[i]);
-      // assert Math.round(routePenalties[i]) == Math.round(computePenalty(routeDemands[i])) : "Schedule" + this + "Route " + i + " Penalty: " + routePenalties[i] + " Computed Penalty: " + computePenalty(routeDemands[i]);
+      assert Math.round(routePenalties[i]) == Math.round(computePenalty(routeDemands[i])) : "Schedule" + this + "Route " + i + " Penalty: " + routePenalties[i] + " Computed Penalty: " + computePenalty(routeDemands[i]);
       for (int j = 0; j < schedule[i].size(); j++) {
         assert customers[schedule[i].get(j)].getRouteId() == i;
       }
     }
+    return true;
   }
+
+
+  // ---------------------------------------------------------- Moving Customer Helpers ------------------------------------------------
+
 
   public void swapCustomers(Customer c1, Customer c2) {
     if (c1 == c2) {
@@ -566,6 +913,16 @@ public class Solution {
 
   public double computeRouteValue(ArrayList<Integer> solution) {
     return computeRouteDistance(solution) + Math.max(0.0, computeRouteDemand(solution) - Solution.vehicleCapacity) * penalty;
+  }
+
+  public double computePenalty(double demand) {
+    return Math.max(0.0, demand - vehicleCapacity) * penalty;
+  }
+
+  public void recomputePenalties() {
+    for (int i = 0; i < schedule.length; i++) {
+      routePenalties[i] = computePenalty(routeDemands[i]);
+    }
   }
 
   // ---------------------------------------------------------- Clone Functions ------------------------------------------------

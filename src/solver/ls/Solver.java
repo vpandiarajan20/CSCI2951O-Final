@@ -33,7 +33,7 @@ public class Solver {
         System.out.println("Initial solution: " + currSolution);
         double currEnergy = currSolution.evalSolution();
         // TODO: explore using different values for the temperature, such as the initial energy
-        t = (float) currEnergy;
+        // t = (float) currEnergy;
         double bestEnergy = currEnergy;
         Solution bestSolution = currSolution.clone();
         int iter = 0;
@@ -42,6 +42,7 @@ public class Solver {
             if (iter % 100 == 0) {
                 // TODO: 100 needs to be a hyperparam
                 Solution.incrementPenalty();
+                currSolution.recomputePenalties();
                 bestEnergy = bestSolution.evalSolution();
                 if (testing) {
                     currSolution.sanityCheck();
