@@ -46,13 +46,16 @@ public class Customer {
   }
   
   public double distanceTo(int p) {
-    return Solution.distanceMatrix[id][p];
-    // return Math.sqrt(Math.pow(x - p.getX(), 2) + Math.pow(y - p.getY(), 2));
+    double dist = Solution.distanceMatrix[id][p];
+    // assert dist == Math.sqrt(Math.pow(x - Solution.customers[p].getX(), 2) + Math.pow(y - Solution.customers[p].getY(), 2));
+    return dist;
+    // return Math.sqrt(Math.pow(x - Solution.customers[p].getX(), 2) + Math.pow(y - Solution.customers[p].getY(), 2));
   }
 
   public double distanceToDepot() {
-    return Solution.distanceMatrix[0][id];
-    // return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+    double dist = Solution.distanceMatrix[0][id];
+    // assert dist == Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+    return dist;
   }
 
   public String toString() {

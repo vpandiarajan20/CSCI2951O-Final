@@ -43,7 +43,9 @@ public class Solver {
                 // TODO: 100 needs to be a hyperparam
                 Solution.incrementPenalty();
                 bestEnergy = bestSolution.evalSolution();
-                currSolution.sanityCheck();
+                if (testing) {
+                    currSolution.sanityCheck();
+                }
                 System.out.println("Solution: " + currSolution);
             }
             // TODO: explore using a group of solutions to perturb
@@ -56,7 +58,8 @@ public class Solver {
             } else {
                 noImprovIter++;
                 if (noImprovIter > restartIter) {
-                    // currSolution = bestSolution.clone();
+                    currSolution = bestSolution.clone();
+                    currSolution.syncCustomerRouteIDs();
                     noImprovIter = 0;
                 }
             }

@@ -12,4 +12,4 @@ fi
 	
 input=$1
 
-java -cp src solver.ls.Main $input
+java -ea -cp src solver.ls.Main $input
