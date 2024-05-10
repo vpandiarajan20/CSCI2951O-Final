@@ -33,7 +33,7 @@ public class Solver {
         System.out.println("Initial solution: " + currSolution);
         double currEnergy = currSolution.evalSolution();
         // TODO: explore using different values for the temperature, such as the initial energy
-        // t = (float) currEnergy;
+        t = (float) currEnergy;
         double bestEnergy = currEnergy;
         Solution bestSolution = currSolution.clone();
         int iter = 0;
@@ -46,7 +46,7 @@ public class Solver {
                 if (testing) {
                     currSolution.sanityCheck();
                 }
-                System.out.println("Solution: " + currSolution);
+                // System.out.println("Solution: " + currSolution);
             }
             // TODO: explore using a group of solutions to perturb
             perturbSolution(currSolution, t);
@@ -54,6 +54,7 @@ public class Solver {
             if (currEnergy < bestEnergy) {
                 bestEnergy = currEnergy;
                 bestSolution = currSolution.clone();
+                System.out.println("New best solution found: " + bestSolution);
                 noImprovIter = 0;
             } else {
                 noImprovIter++;
