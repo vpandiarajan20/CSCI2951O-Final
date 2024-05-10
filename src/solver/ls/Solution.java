@@ -51,7 +51,7 @@ public class Solution {
     Solution.vehicleCapacity = instance.vehicleCapacity;
     Solution.customers = new ArrayList<Customer>();
     for (int i = 0; i < instance.numCustomers; i++) {
-      Solution.customers.add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i], i+1));
+      Solution.customers.add(new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i], i));
     }
     // sort customers by demand, descending
     Solution.customers.sort((a, b) -> b.getDemand() - a.getDemand());
@@ -119,7 +119,7 @@ public class Solution {
     //   demandLeft[vehicleNum] += demand;
     //   schedule[vehicleNum].add(customers.get(i));
     // }
-    for (int i = 0; i < customers.size(); i++) {
+    for (int i = 1; i < customers.size(); i++) {
       demand = customers.get(i).getDemand();
       for (int j = 0; j < demandLeft.length; j++) {
         if (demandLeft[j] + demand <= Solution.vehicleCapacity) {
@@ -133,7 +133,7 @@ public class Solution {
     for (int i = 0; i < schedule.length; i ++) {
       insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
     }
-   }
+  }
   
     public void sweepGenerateInitialSolution() {
     // generate a solution using the sweep algorithm

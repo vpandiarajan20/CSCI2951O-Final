@@ -30,11 +30,11 @@ public class Customer {
   }
 
   public double distanceTo(Customer p) {
-    return Math.sqrt(Math.pow(x - p.getX(), 2) + Math.pow(y - p.getY(), 2));
+    return Solution.distanceMatrix[id][p.getId()];
   }
 
   public double distanceToDepot() {
-    return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+    return Solution.distanceMatrix[id][0];
   }
 
   public String toString() {
