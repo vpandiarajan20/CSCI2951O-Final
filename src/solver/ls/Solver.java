@@ -7,28 +7,30 @@ public class Solver {
     float alpha;
     int maxIter;
     int restartIter;
-    int penaltyIncrementIter; //TODO: incorporate this
-    float penaltyIncrementFactor; //TODO: incorporate this
-    boolean randomRestart; //TODO: incorporate this
+    int numInits;
+    // int penaltyIncrementIter; //TODO: incorporate this
+    // float penaltyIncrementFactor; //TODO: incorporate this
+    // boolean randomRestart; //TODO: incorporate this
     VRPInstance instance;
     static boolean testing = false; //TODO: Remember to set this to false
     // InsertionHeuristic[] insertionHeuristics;
     // RemoveHeuristic removalHeuristic;
 
-    public Solver(float t, float tMin, float alpha, int maxIter, int restartIter, 
+    public Solver(float t, float tMin, float alpha, int maxIter, int restartIter, int numInits,
     VRPInstance instance) {
         this.t = t;
         this.tMin = tMin;
         this.alpha = alpha;
         this.maxIter = maxIter;
         this.restartIter = restartIter;
+        this.numInits = numInits;
         this.instance = instance;
         // this.insertionHeuristics = insertionHeuristics;
         // this.removalHeuristic = removalHeuristic;
     }
 
     public Solution solve() {
-        Solution.initializeFields(instance);
+        Solution.initializeFields(instance, numInits);
         Solution currSolution = new Solution(instance);
         // System.out.println("Initial solution: " + currSolution);
         double currEnergy = currSolution.evalSolution();

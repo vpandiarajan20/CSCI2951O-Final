@@ -15,6 +15,7 @@ public class Solution {
   static Customer[] customers;
   static ArrayList<Customer> sortedCustomers;
   static double penalty = 0.0;
+  static int numberPossibleInits;
   static boolean testing = false; // TODO: Remember to disable
 
   // InsertionHeuristic[] insertionHeuristics;
@@ -40,16 +41,72 @@ public class Solution {
     routePenalties = new double[instance.numVehicles];
     // this.insertionHeuristics = insertionHeuristics;
     // this.removalHeuristic = removalHeuristic;
-
     boolean naiveSolution = naiveGenerateInitialSolution();
-    
+    ArrayList<Integer>[] bestSchedule = copySchedule(schedule);
+    double bestDistance = evalSolution();
+
+    // for (int i = 0; i < numberPossibleInits; i ++) {
+    //   for (int j = 0; j < schedule.length; j ++) {
+    //     schedule[j] = new ArrayList<Integer>();
+    //   }
+    //   Collections.shuffle(sortedCustomers);
+    //   for (int j = 0; j < sortedCustomers.size(); j++) {
+    //     sortedCustomers.get(j).setRouteId(-1);
+    //   }
+    //   // System.out.println("Shuffed Customers" + sortedCustomers);
+    //   boolean solWorks = naiveGenerateGreedyInitialSolution();
+    //   workingSolution = workingSolution || solWorks;
+
+    //   if (solWorks) {
+    //     int sumCustomers = 0;
+    //     for (int j = 0; j < schedule.length; j++) {
+    //       sumCustomers += schedule[j].size();
+    //     }
+    //     if (sumCustomers != sortedCustomers.size()) {
+    //       System.out.println("Sum Customers: " + sumCustomers + " Sorted Customers: " + sortedCustomers.size());
+    //       System.out.println("Working SOlution Found: " + this);
+
+    //     }
+    //     double newDistance = evalSolution();
+    //     if (newDistance < bestDistance) {
+    //       bestSchedule = copySchedule(schedule);
+    //       bestDistance = newDistance;
+    //     }
+    //   }
+    // }
+
+    // if (workingSolution) {
+    //   schedule = bestSchedule;
+    //   for (int i = 0; i < schedule.length; i++) {
+    //     routeDemands[i] = computeRouteDemand(schedule[i]);
+    //     routeDistances[i] = computeRouteDistance(schedule[i]);
+    //     routePenalties[i] = computePenalty(routeDemands[i]);
+    //   }
+    //   syncCustomerRouteIDs();
+    //   sanityCheck();
+    // } else {
     if (!naiveSolution) {
       for (int i = 0; i < schedule.length; i ++) {
         schedule[i] = new ArrayList<Integer>();
       }
+      Solution.sortedCustomers.sort((a, b) -> b.getDemand() - a.getDemand());
+      for (int j = 0; j < sortedCustomers.size(); j++) {
+        sortedCustomers.get(j).setRouteId(-1);
+      }
       naiveGenerateGreedyInitialSolution();
-      // System.out.println("Naive Solution Failed, Generated Greedy Solution");
+      for (int i = 0; i < schedule.length; i++) {
+        routeDemands[i] = computeRouteDemand(schedule[i]);
+        routeDistances[i] = computeRouteDistance(schedule[i]);
+        routePenalties[i] = computePenalty(routeDemands[i]);
+      }
+      syncCustomerRouteIDs();
+      sanityCheck();
+      System.out.println("Naive Solution Failed, Generated Greedy Solution");
     }
+    for (int i = 0; i < schedule.length; i ++) {
+      applyTwoOpt(i);
+    }
+    System.out.println("Initial Solution Score: " + evalSolution());
   }
   
 
@@ -66,7 +123,9 @@ public class Solution {
         vehicleNum = rand.nextInt(schedule.length);
         // System.out.println("Trying to add customers:" + customer1 + " to vehicle " + vehicleNum);
       }
+      int customer1RouteID = customer1.getRouteId();
       removeCustomer(customer1);
+      applyTwoOpt(customer1RouteID);
       // if (testing) {
       //   sanityCheck();
       // }
@@ -75,6 +134,7 @@ public class Solution {
         idx = rand.nextInt(schedule[vehicleNum].size());
       }
       insertCustomer(customer1, vehicleNum, idx);
+      applyTwoOpt(customer1.getRouteId());
       if (testing) {
         sanityCheck();
       }
@@ -91,6 +151,8 @@ public class Solution {
         // System.out.println("Trying to swap customers:" + customer1 + " " + customer2);
       }
       swapCustomers(customer1, customer2);
+      applyTwoOpt(customer1.getRouteId());
+      applyTwoOpt(customer2.getRouteId());
       if (testing) {
         sanityCheck();
       }
@@ -216,10 +278,11 @@ public class Solution {
 
 
   // ---------------------------------------------------------- Initialization Functions ------------------------------------------------
-  public static void initializeFields(VRPInstance instance) {
+  public static void initializeFields(VRPInstance instance, int numberPossibleInits) {
     Solution.vehicleCapacity = instance.vehicleCapacity;
     Solution.customers = new Customer[instance.numCustomers];
     Solution.sortedCustomers = new ArrayList<Customer>();
+    Solution.numberPossibleInits = numberPossibleInits;
     for (int i = 0; i < instance.numCustomers; i++) {
       customers[i] = new Customer(instance.xCoordOfCustomer[i], instance.yCoordOfCustomer[i], instance.demandOfCustomer[i], i, -1);
       if (i != 0) {
@@ -307,7 +370,7 @@ public class Solution {
     // }
   }
 
-  public void naiveGenerateGreedyInitialSolution() {
+  public boolean naiveGenerateGreedyInitialSolution() {
     int demand = 0;
     int[] demandLeft = new int[schedule.length];
     for (int i = 0; i < sortedCustomers.size(); i++) {
@@ -339,8 +402,14 @@ public class Solution {
     }
     //TODO: Replace this
     // for (int i = 0; i < schedule.length; i ++) {
-    //   insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
+    //   applyTwoOpt(i);
     // }
+    for (int i = 1; i < customers.length; i++) {
+      if (customers[i].getRouteId() == -1) {
+        return false;
+      }
+    }
+    return true;
   }
 
 
@@ -438,6 +507,14 @@ public class Solution {
   @SuppressWarnings("unchecked")
   public static ArrayList<Integer> copyRoute(ArrayList<Integer> route) {
     return (ArrayList<Integer>)route.clone();
+  }
+
+  public static Customer[] copyCustomers(Customer[] customers) {
+    Customer[] customersNew = new Customer[customers.length];
+    for (int i = 0; i < customers.length; i++) {
+      customersNew[i] = customers[i].clone();
+    }
+    return customersNew;
   }
   
   @SuppressWarnings("unchecked")
