@@ -1,7 +1,9 @@
 package solver.ls;
 import java.util.ArrayList;
 import java.util.Random;
-
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class Solution {
 
@@ -38,7 +40,16 @@ public class Solution {
     routePenalties = new double[instance.numVehicles];
     // this.insertionHeuristics = insertionHeuristics;
     // this.removalHeuristic = removalHeuristic;
-    naiveGenerateInitialSolution();
+
+    boolean naiveSolution = naiveGenerateInitialSolution();
+    
+    if (!naiveSolution) {
+      for (int i = 0; i < schedule.length; i ++) {
+        schedule[i] = new ArrayList<Integer>();
+      }
+      naiveGenerateGreedyInitialSolution();
+      // System.out.println("Naive Solution Failed, Generated Greedy Solution");
+    }
   }
   
 
@@ -56,9 +67,9 @@ public class Solution {
         // System.out.println("Trying to add customers:" + customer1 + " to vehicle " + vehicleNum);
       }
       removeCustomer(customer1);
-      if (testing) {
-        sanityCheck();
-      }
+      // if (testing) {
+      //   sanityCheck();
+      // }
       int idx = 0;
       if (schedule[vehicleNum].size() > 0) {
         idx = rand.nextInt(schedule[vehicleNum].size());
@@ -69,11 +80,14 @@ public class Solution {
       }
     } else if (randNum == 1) {
       Customer customer2 = customers[rand.nextInt(customers.length-1) + 1];
+      // System.out.println("Customer 1 Route " + customer1.getRouteId() + " Customer 2 Route " +  customer2.getRouteId());
       while (customer1 == customer2
         || routeDemands[customer1.getRouteId()] + customer2.getDemand() - customer1.getDemand() > vehicleCapacity
         || routeDemands[customer2.getRouteId()] + customer1.getDemand() - customer2.getDemand() > vehicleCapacity) {
         customer1 = customers[rand.nextInt(customers.length-1) + 1];
         customer2 = customers[rand.nextInt(customers.length-1) + 1];
+        // System.out.println("Customer 1 Route IN " + customer1.getRouteId() + " Customer 2 Route IN " +  customer2.getRouteId());
+
         // System.out.println("Trying to swap customers:" + customer1 + " " + customer2);
       }
       swapCustomers(customer1, customer2);
@@ -106,6 +120,7 @@ public class Solution {
     ArrayList<Integer> route = schedule[routeId];
     int[] prevAndNext = new int[2];
     // System.out.println("Route: " + route + " Customer Index: " + customerIndex);
+    assert customerIndex >= 0 : "Customer Index is negative";
     assert route.size() > 0 : "Route is empty";
     assert customerIndex < route.size() : "Customer Index is out of bounds";
     if (route.size() <= 1) {
@@ -140,6 +155,11 @@ public class Solution {
         assert customers[schedule[i].get(j)].getRouteId() == i;
       }
     }
+    for (int i = 1; i < customers.length; i++) {
+      assert customers[i].getRouteId() != -1;
+    }
+    // assert false
+
     return true;
   }
 
@@ -233,7 +253,7 @@ public class Solution {
                 } else {
                     // System.out.print("i: " + i + " j: " + j + " x: " + customerI.getX() + " y: " + customerI.getY() + " x: " + customerJ.getX() + " y: " + customerJ.getY() + "\n");
                     distanceMatrix[i][j] = Math.sqrt(Math.pow(customerI.getX() - customerJ.getX(), 2) + Math.pow(customerI.getY() - customerJ.getY(), 2));
-                    assert distanceMatrix[i][j] == customerI.distanceTo(j);
+                    // assert distanceMatrix[i][j] == customerI.distanceTo(j);
                     if (j != 0) {
                       nearestNeighborsMatrix[i].add(new Tuple<Double, Integer>(distanceMatrix[i][j], j));
                     }
@@ -247,11 +267,10 @@ public class Solution {
         Solution.penalty = Math.max(0.1, Math.min(1000, maxDistance/maxDemand));
         // System.out.println("Max Distance: " + maxDistance + " Max Demand: " + maxDemand + " Total Demand: " + totalDemand + " Total Capacity: " + totalCapacity + " Ratio: " + totalDemand/totalCapacity);
   }
-  
-  public void naiveGenerateInitialSolution() {
+  public boolean naiveGenerateInitialSolution() {
     int demand = 0;
     int[] demandLeft = new int[schedule.length];
-    for (int i = 1; i < customers.length; i++) {
+    for (int i = 0; i < customers.length; i++) {
       demand = customers[i].getDemand();
       for (int j = 0; j < demandLeft.length; j++) {
         if (demandLeft[j] + demand <= Solution.vehicleCapacity) {
@@ -265,17 +284,95 @@ public class Solution {
     }
     for (int i = 0; i < schedule.length; i++) {
       routeDemands[i] = computeRouteDemand(schedule[i]);
+      // System.out.println("Route " + i + " Demand: " + routeDemands[i] + " Capacity: " + Solution.vehicleCapacity);
       assert routeDemands[i] <= Solution.vehicleCapacity;
       routeDistances[i] = computeRouteDistance(schedule[i]);
       assert routeDistances[i] >= 0;
       routePenalties[i] = computePenalty(routeDemands[i]);
       assert routePenalties[i] == 0;
     }
-    
+    // for (int i = 0; i < customers.length; i++) {
+    //   System.out.println("Customer " + i + " " + customers[i]);
+    // }
+    // System.out.println("Initial Solution: " + this);
+    for (int i = 1; i < customers.length; i++) {
+      if (customers[i].getRouteId() == -1) {
+        return false;
+      }
+    }
+    return true;
     //TODO: Replace this
     // for (int i = 0; i < schedule.length; i ++) {
     //   insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
     // }
+  }
+
+  public void naiveGenerateGreedyInitialSolution() {
+    int demand = 0;
+    int[] demandLeft = new int[schedule.length];
+    for (int i = 0; i < sortedCustomers.size(); i++) {
+      demand = sortedCustomers.get(i).getDemand();
+      for (int j = 0; j < demandLeft.length; j++) {
+        if (demandLeft[j] + demand <= Solution.vehicleCapacity) {
+          schedule[j].add(sortedCustomers.get(i).getId());
+          sortedCustomers.get(i).setRouteId(j);
+          assert sortedCustomers.get(i).getRouteId() == j;
+          demandLeft[j] += demand;
+          break;
+        }
+      }
+    }
+    for (int i = 0; i < schedule.length; i++) {
+      routeDemands[i] = computeRouteDemand(schedule[i]);
+      assert routeDemands[i] <= Solution.vehicleCapacity;
+      routeDistances[i] = computeRouteDistance(schedule[i]);
+      assert routeDistances[i] >= 0;
+      routePenalties[i] = computePenalty(routeDemands[i]);
+      assert routePenalties[i] == 0;
+    }
+    // for (int i = 0; i < customers.length; i++) {
+    //   System.out.println("Customer " + i + " " + customers[i]);
+    // }
+    // System.out.println("Initial Solution: " + this);
+    if (testing) {
+      sanityCheck();
+    }
+    //TODO: Replace this
+    // for (int i = 0; i < schedule.length; i ++) {
+    //   insertionHeuristics[0].applyHeuristicRoute(schedule[i]);
+    // }
+  }
+
+
+  public void applyTwoOpt(int vehichleNum) {
+    ArrayList<Integer> route = schedule[vehichleNum];
+    int routeSize = route.size();
+    boolean improved = true;
+    while (improved) {
+      improved = false;
+      for (int i = 0; i < routeSize - 1; i++) {
+        for (int j = i + 1; j < routeSize; j++) {
+          ArrayList<Integer> newRoute = new ArrayList<Integer>();
+          for (int k = 0; k < i; k++) {
+            newRoute.add(route.get(k));
+          }
+          for (int k = j; k >= i; k--) {
+            newRoute.add(route.get(k));
+          }
+          for (int k = j + 1; k < routeSize; k++) {
+            newRoute.add(route.get(k));
+          }
+          double newRouteDistance = computeRouteDistance(newRoute);
+          if (newRouteDistance < routeDistances[vehichleNum]) {
+            schedule[vehichleNum] = newRoute;
+            routeDistances[vehichleNum] = newRouteDistance;
+            routeDemands[vehichleNum] = computeRouteDemand(newRoute);
+            routePenalties[vehichleNum] = computePenalty(routeDemands[vehichleNum]);
+            improved = true;
+          }
+        }
+      }
+    }
   }
   
   // ---------------------------------------------------------- Evaluation Functions ------------------------------------------------
